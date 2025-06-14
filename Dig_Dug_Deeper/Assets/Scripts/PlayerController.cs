@@ -7,23 +7,31 @@ public class Player : MonoBehaviour
     public float moveDelay = 0.15f; // Delay between moves
     private float _lastMoveTime;
 
+    [Header("Grid Position")]
+    [SerializeField] private Vector2Int _startingGridPos; // Set in Inspector
     private Vector2Int _gridPos;
+
+
     private GridManager _gridManager;
     private float _tileSize = 1f;
 
-    public Sprite tunnelSprite;
 
     void Start()
     {
-        _gridManager = FindObjectOfType<GridManager>();
 
-        // Convert world pos to grid coordinates
-        _gridPos = new Vector2Int(
-            Mathf.RoundToInt(transform.position.x),
-            Mathf.RoundToInt(transform.position.y)
+        _gridManager = FindObjectOfType<GridManager>();
+        _gridPos = _startingGridPos;
+
+        // Same offset used in GridManager
+        Vector2 offset = new Vector2(
+            -(_gridManager.width * _gridManager.tileSize) / 2f + _gridManager.tileSize / 2f,
+            -(_gridManager.height * _gridManager.tileSize) / 2f + _gridManager.tileSize / 2f
         );
 
-        transform.position = new Vector2(_gridPos.x, _gridPos.y);
+        transform.position = new Vector2(
+            _gridPos.x * _gridManager.tileSize,
+            _gridPos.y * _gridManager.tileSize
+        ) + offset;
     }
 
     void Update()
@@ -54,18 +62,36 @@ public class Player : MonoBehaviour
     void TryMove(Vector2Int dir)
     {
         Vector2Int targetPos = _gridPos + dir;
+
+        if (targetPos.x < 0 || targetPos.x >= _gridManager.width ||
+            targetPos.y < 0 || targetPos.y >= _gridManager.height)
+            return; // Out of bounds
+
+        _gridPos = targetPos;
+
+        Vector2 offset = new Vector2(
+            -(_gridManager.width * _gridManager.tileSize) / 2f + _gridManager.tileSize / 2f,
+            -(_gridManager.height * _gridManager.tileSize) / 2f + _gridManager.tileSize / 2f
+        );
+
+        transform.position = new Vector2(
+            _gridPos.x * _gridManager.tileSize,
+            _gridPos.y * _gridManager.tileSize
+        ) + offset;
+
         GridCell targetCell = _gridManager.GetCell(targetPos.x, targetPos.y);
 
-        if (targetCell == null) return; // Out of bounds
-
-        // Move player
-        _gridPos = targetPos;
-        transform.position = new Vector2(_gridPos.x, _gridPos.y);
-
-        // Digging logic
-        if (targetCell.type == TileType.Dirt)
+        if (targetCell != null && targetCell.type == TileType.Dirt)
         {
-            targetCell.ChangeToTunnel(tunnelSprite);
+            targetCell.ChangeToTunnel();
+
+            // Check if there's a rock above
+            GridCell above = _gridManager.GetCell(targetPos.x, targetPos.y + 1);
+            if (above != null && above.type == TileType.Rock)
+            {
+                above.TryStartFall();
+            }
         }
+
     }
 }

@@ -102,3 +102,4 @@ MonoBehaviour:
   x: 0
   y: 0
   type: 2
+  breakingSprite: {fileID: 21300000, guid: d3c16e1b52a666241ae25b1644c6bab9, type: 3}

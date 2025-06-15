@@ -11,7 +11,11 @@ public abstract class EnemyController : MonoBehaviour
     protected Transform _player;
     protected Vector2Int _gridPos;
 
-    protected enum EnemyState { Idle, Chase, Ghost }
+    public Sprite ghostSprite;
+    private Sprite _originalSprite;
+    public Sprite rockDeathSprite;
+
+    protected enum EnemyState { Idle, Wander, Chase, Ghost }
     protected EnemyState _state = EnemyState.Idle;
 
     public void Init(Vector2Int gridPos)
@@ -19,6 +23,7 @@ public abstract class EnemyController : MonoBehaviour
         _gridPos = gridPos;
         _gridManager = FindObjectOfType<GridManager>();
         _player = GameObject.FindGameObjectWithTag("Player").transform;
+        _originalSprite = GetComponent<SpriteRenderer>().sprite;
 
         if (_player == null)
         {
@@ -28,18 +33,45 @@ public abstract class EnemyController : MonoBehaviour
 
         transform.position = _gridManager.GetWorldPosition(_gridPos.x, _gridPos.y);
 
-        StartCoroutine(DelayedChaseStart());
+        StartCoroutine(WanderThenChase());
     }
 
-    private IEnumerator DelayedChaseStart()
+    private IEnumerator WanderThenChase()
     {
-        yield return new WaitForSeconds(1f);
+        _state = EnemyState.Wander;
+        Debug.Log($"{name} entered WANDER state");
+
+        float wanderDuration = 3f;
+        float wanderTimer = 0f;
+
+        while (wanderTimer < wanderDuration)
+        {
+            yield return new WaitForSeconds(moveDelay);
+
+            Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+            Vector2Int dir = directions[Random.Range(0, directions.Length)];
+            Vector2Int nextPos = _gridPos + dir;
+            GridCell cell = _gridManager.GetCell(nextPos.x, nextPos.y);
+
+            if (cell != null && cell.type == TileType.Dirt)
+            {
+                _gridPos = nextPos;
+                transform.position = _gridManager.GetWorldPosition(_gridPos.x, _gridPos.y);
+            }
+
+            wanderTimer += moveDelay;
+        }
+
         _state = EnemyState.Chase;
+        Debug.Log($"{name} switched to CHASE state");
     }
 
     protected virtual void Update()
     {
-        if (_state != EnemyState.Chase) return;
+
+        if (GameManager.Instance == null || GameManager.Instance.IsGameOver) return;
+
+        if (_state == EnemyState.Idle || _state == EnemyState.Wander) return;
         if (Time.time - _lastMoveTime < moveDelay) return;
 
         Vector2Int direction = GetMoveDirectionTowardPlayer();
@@ -49,12 +81,24 @@ public abstract class EnemyController : MonoBehaviour
             Vector2Int nextPos = _gridPos + direction;
             GridCell cell = _gridManager.GetCell(nextPos.x, nextPos.y);
 
-            if (cell != null && cell.type == TileType.Tunnel)
+            bool canMove = false;
+
+            if (_state == EnemyState.Chase && cell != null && cell.type == TileType.Tunnel)
+            {
+                canMove = true;
+            }
+            else if (_state == EnemyState.Ghost && cell != null &&
+                     (cell.type == TileType.Tunnel || cell.type == TileType.Dirt))
+            {
+                canMove = true;
+            }
+
+            if (canMove)
             {
                 _gridPos = nextPos;
                 transform.position = _gridManager.GetWorldPosition(_gridPos.x, _gridPos.y);
             }
-            else
+            else if (_state == EnemyState.Chase)
             {
                 StartCoroutine(GhostThroughDirt());
             }
@@ -72,10 +116,30 @@ public abstract class EnemyController : MonoBehaviour
 
         Vector2Int diff = playerPos - _gridPos;
 
+        List<Vector2Int> directions = new List<Vector2Int>();
+
         if (Mathf.Abs(diff.x) > Mathf.Abs(diff.y))
-            return new Vector2Int((int)Mathf.Sign(diff.x), 0);
-        else if (diff.y != 0)
-            return new Vector2Int(0, (int)Mathf.Sign(diff.y));
+        {
+            directions.Add(new Vector2Int((int)Mathf.Sign(diff.x), 0));
+            directions.Add(new Vector2Int(0, (int)Mathf.Sign(diff.y)));
+        }
+        else
+        {
+            directions.Add(new Vector2Int(0, (int)Mathf.Sign(diff.y)));
+            directions.Add(new Vector2Int((int)Mathf.Sign(diff.x), 0));
+        }
+
+        directions.Add(-directions[0]);
+        directions.Add(-directions[1]);
+
+        foreach (var dir in directions)
+        {
+            Vector2Int testPos = _gridPos + dir;
+            GridCell cell = _gridManager.GetCell(testPos.x, testPos.y);
+
+            if (cell != null && cell.type == TileType.Tunnel)
+                return dir;
+        }
 
         return Vector2Int.zero;
     }
@@ -83,12 +147,62 @@ public abstract class EnemyController : MonoBehaviour
     private IEnumerator GhostThroughDirt()
     {
         _state = EnemyState.Ghost;
-        Color originalColor = GetComponent<SpriteRenderer>().color;
-        GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, 0.5f); // transparent
+        Debug.Log($"{name} entered GHOST state");
 
-        yield return new WaitForSeconds(1.0f); // ghost duration
+        var renderer = GetComponent<SpriteRenderer>();
+        renderer.color = new Color(1, 1, 1, 0.5f); // transparent
+        if (ghostSprite != null)
+            renderer.sprite = ghostSprite;
 
-        GetComponent<SpriteRenderer>().color = originalColor;
+        while (true)
+        {
+            yield return new WaitForSeconds(moveDelay);
+
+            Vector2Int direction = GetMoveDirectionTowardPlayer();
+            Vector2Int nextPos = _gridPos + direction;
+            GridCell cell = _gridManager.GetCell(nextPos.x, nextPos.y);
+
+            if (cell != null)
+            {
+                _gridPos = nextPos;
+                transform.position = _gridManager.GetWorldPosition(_gridPos.x, _gridPos.y);
+
+                if (cell.type == TileType.Tunnel)
+                    break;
+            }
+        }
+
+        renderer.color = Color.white;
+        renderer.sprite = _originalSprite;
         _state = EnemyState.Chase;
+        Debug.Log($"{name} returned to CHASE state");
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            Debug.Log($"{name} touched the player!");
+
+            PlayerController player = other.GetComponent<PlayerController>();
+            if (player != null)
+            {
+                player.KillPlayer();
+            }
+        }
+    }
+
+    public void ShowDeathAndDestroy(Sprite deathSprite, float delay = 0.3f)
+    {
+        StopAllCoroutines();
+        StartCoroutine(DeathSequence(deathSprite, delay));
+    }
+
+    private IEnumerator DeathSequence(Sprite deathSprite, float delay)
+    {
+        GetComponent<SpriteRenderer>().sprite = deathSprite;
+        GameManager.Instance.EnemyDied();
+        yield return new WaitForSeconds(delay);
+        Destroy(gameObject);
     }
 }

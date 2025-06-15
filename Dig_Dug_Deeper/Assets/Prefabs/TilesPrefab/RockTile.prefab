@@ -11,6 +11,8 @@ GameObject:
   - component: {fileID: 1565905821868279801}
   - component: {fileID: 7842130421349987590}
   - component: {fileID: 5951210618656388130}
+  - component: {fileID: -7673370905133882954}
+  - component: {fileID: 8197825545513352701}
   m_Layer: 0
   m_Name: RockTile
   m_TagString: Untagged
@@ -102,4 +104,62 @@ MonoBehaviour:
   x: 0
   y: 0
   type: 2
+--- !u!114 &-7673370905133882954
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7155364404128059154}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b37092f9b88f3c4582be6818a7a8f42, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
   breakingSprite: {fileID: 21300000, guid: d3c16e1b52a666241ae25b1644c6bab9, type: 3}
+--- !u!61 &8197825545513352701
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7155364404128059154}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 0.9375, y: 0.6591797}
+    newSize: {x: 19.2, y: 13.5}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Size: {x: 0.9375, y: 0.6591797}
+  m_EdgeRadius: 0

@@ -4,207 +4,146 @@ using UnityEngine;
 
 public class GridManager : MonoBehaviour
 {
-    public float tileSize = 1f;
-
-    public GameObject[] dirtLayerPrefabs;
+    private GameObject _dirtPrefab;
+    public GameObject tunnelPrefab;
     public GameObject rockPrefab;
     public GameObject playerPrefab;
     public GameObject pookaPrefab;
     public GameObject fygarPrefab;
 
-    public TextAsset levelFile; // assign .txt file in inspector
+    public GameObject[] dirtVariants;
 
-    private GridCell[,] grid;
-    public int width;
-    public int height;
+    public string levelFileName = "Levels/Level_1";
+    public float tileUnitSize = 1f; // 1 = 16 pixels, since Pixels Per Unit = 16
 
-    public void LoadLevelFromText(TextAsset file)
+    private int gridWidth;
+    private int gridHeight;
+    public static GridManager Instance;
+
+    private void Awake()
     {
-        if (file == null)
-        {
-            Debug.LogError("No level file assigned!");
-            return;
-        }
-
-        else
-        {
-            Debug.Log($"Level file loaded with {file.text.Length} characters.");
-        }
-
-        string[] rawLines = file.text.Split('\n');
-        List<string> lines = new List<string>();
-
-        foreach (var line in rawLines)
-        {
-            string trimmed = line.Trim();
-            if (!string.IsNullOrEmpty(trimmed))
-                lines.Add(trimmed);
-        }
-
-        height = lines.Count;
-        width = lines[0].Length;
-
-        grid = new GridCell[width, height];
-
-        Vector2 offset = new Vector2(-(width * tileSize) / 2f + tileSize / 2f, -(height * tileSize) / 2f + tileSize / 2f);
-
-        for (int y = 0; y < height; y++)
-        {
-            string line = lines[y].Trim();
-            int gridY = height - 1 - y;
-            //string line = lines[height - 1 - y].Trim();
-
-            for (int x = 0; x < width; x++)
-            {
-                char c = line[x];
-                //Vector2 pos = new Vector2(x * tileSize, y * tileSize) + offset;
-                Vector2 pos = new Vector2(x * tileSize, gridY * tileSize) + offset;
-
-                TileType type = TileType.Dirt;
-                GameObject prefabToUse = null;
-
-                switch (c)
-                {
-                    case 'D':
-                        type = TileType.Dirt;
-                        int layerIndex = Mathf.FloorToInt((float)(height - 1 - y) / height * dirtLayerPrefabs.Length);
-                        layerIndex = Mathf.Clamp(layerIndex, 0, dirtLayerPrefabs.Length - 1);
-                        prefabToUse = dirtLayerPrefabs[layerIndex];
-                        break;
-
-                    case 'T':
-                        type = TileType.Tunnel;
-                        break;
-
-                    case 'R':
-                        type = TileType.Rock;
-                        prefabToUse = rockPrefab;
-                        break;
-
-                    case 'P':
-                        type = TileType.Tunnel;
-                        var playerObj = Instantiate(playerPrefab, pos, Quaternion.identity);
-                        Vector2Int playerGridPos = new Vector2Int(x, gridY); // <-- USE gridY, not y!
-                        playerObj.GetComponent<PlayerController>().Init(playerGridPos);
-                        break;
-
-                    case 'O': // Pooka
-                        type = TileType.Tunnel;
-                        SpawnEnemy(pookaPrefab, x, y);
-                        break;
-
-                    case 'F': // Fygar
-                        type = TileType.Tunnel;
-                        SpawnEnemy(fygarPrefab, x, y);
-                        break;
-
-                    case 'I': // Indestructible Dirt
-                        type = TileType.Indestructible;
-                        layerIndex = Mathf.FloorToInt((float)(height - 1 - y) / height * dirtLayerPrefabs.Length);
-                        layerIndex = Mathf.Clamp(layerIndex, 0, dirtLayerPrefabs.Length - 1);
-                        prefabToUse = dirtLayerPrefabs[layerIndex]; // reuse dirt prefab but tag it differently
-                        break;
-
-                    default:
-                        Debug.LogWarning($"Unknown tile character '{c}' at ({x},{y})");
-                        break;
-                }
-
-                GameObject cellObj;
-
-                if (prefabToUse != null)
-                {
-                    cellObj = Instantiate(prefabToUse, pos, Quaternion.identity, transform);
-                    Debug.Log($"Spawned tile at ({x}, {y}): {cellObj.name}");
-                }
-                else
-                {
-                    cellObj = new GameObject($"Cell_{x}_{y}");
-                    cellObj.transform.position = pos;
-                    cellObj.transform.parent = transform;
-                    cellObj.AddComponent<SpriteRenderer>().enabled = false;
-                }
-
-                GridCell cell = cellObj.GetComponent<GridCell>();
-                if (cell == null) cell = cellObj.AddComponent<GridCell>();
-                cell.Init(x, y, type);
-                grid[x, gridY] = cell;
-
-                if (type == TileType.Rock)
-                {
-                    RockController rock = cellObj.GetComponent<RockController>();
-                    if (rock != null) rock.Init(x, y);
-                }
-            }
-        }
+        Instance = this;
     }
 
-    void SpawnEnemy(GameObject enemyPrefab, int x, int y)
+    void Start()
     {
-        if (enemyPrefab == null)
-        {
-            Debug.LogError($"Enemy prefab is not assigned for position ({x}, {y})!");
-            return;
-        }
-
-        GameObject enemy = Instantiate(enemyPrefab, GetWorldPosition(x, y), Quaternion.identity);
-        EnemyController controller = enemy.GetComponent<EnemyController>();
-
-        if (controller == null)
-        {
-            Debug.LogError("Spawned enemy is missing EnemyController!");
-            return;
-        }
-
-        controller.Init(new Vector2Int(x, y));
-        GameManager.Instance.RegisterEnemy();
+        SetDirtForCurrentLevel();
+        LoadLevelFromFile();
     }
 
-    public GridCell GetCell(int x, int y)
+    void LoadLevelFromFile()
     {
-        if (x < 0 || y < 0 || x >= width || y >= height) return null;
-        return grid[x, y];
-    }
 
-    public void ClearCell(int x, int y)
-    {
-        if (x < 0 || y < 0 || x >= width || y >= height) return;
-        grid[x, y] = null;
-    }
-
-    public void SetCell(int x, int y, GridCell cell)
-    {
-        if (x < 0 || y < 0 || x >= width || y >= height) return;
-        grid[x, y] = cell;
-    }
-
-    public Vector2 GetWorldPosition(int x, int y)
-    {
-        Vector2 offset = new Vector2(
-            -(width * tileSize) / 2f + tileSize / 2f,
-            -(height * tileSize) / 2f + tileSize / 2f
-        );
-
-        return new Vector2(x * tileSize, y * tileSize) + offset;
-    }
-
-    public void ClearLevel()
-    {
         foreach (Transform child in transform)
         {
             Destroy(child.gameObject);
         }
 
-        // Optionally also destroy player/enemy clones
-        foreach (var enemy in GameObject.FindGameObjectsWithTag("Enemy"))
+        TextAsset levelData = Resources.Load<TextAsset>(levelFileName);
+        if (levelData == null)
         {
-            Destroy(enemy);
+            Debug.LogError("Level file not found at Resources/" + levelFileName);
+            return;
         }
 
-        var player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
+        string[] lines = levelData.text.Split('\n');
+        int height = lines.Length;
+        int width = 0;
+        foreach (string line in lines)
+            width = Mathf.Max(width, line.Trim().Length);
+
+        Vector3 bottomLeftOffset = new Vector3(0, 0, 0); // you can also add padding here if needed
+
+        for (int y = 0; y < height; y++)
         {
-            Destroy(player);
+            string line = lines[y].Trim();
+            for (int x = 0; x < line.Length; x++)
+            {
+                char tileChar = line[x];
+                GameObject prefabToSpawn = GetPrefabForChar(tileChar);
+
+                if (prefabToSpawn != null)
+                {
+                    float spawnX = x * tileUnitSize;
+                    float spawnY = (height - 1 - y) * tileUnitSize;
+                    Vector3 spawnPos = new Vector3(spawnX, spawnY, 0) + bottomLeftOffset;
+                    Instantiate(prefabToSpawn, spawnPos, Quaternion.identity, transform);
+                }
+            }
         }
+
+
+        gridWidth = width;
+        gridHeight = height;
+
+        CenterCameraOnGrid();
+
+    }
+
+    public bool IsWithinBounds(Vector3 worldPos)
+    {
+        int x = Mathf.RoundToInt(worldPos.x);
+        int y = Mathf.RoundToInt(worldPos.y);
+        return x >= 0 && x < gridWidth && y >= 0 && y < gridHeight;
+    }
+
+    void SetDirtForCurrentLevel()
+    {
+        if (levelFileName.Contains("Level_1"))
+            _dirtPrefab = dirtVariants[0];
+        else if (levelFileName.Contains("Level_2"))
+            _dirtPrefab = dirtVariants[1];
+        else if (levelFileName.Contains("Level_3"))
+            _dirtPrefab = dirtVariants[2];
+        else
+            Debug.LogWarning("No matching dirt prefab found for: " + levelFileName);
+    }
+
+    GameObject GetPrefabForChar(char c)
+    {
+        return c switch
+        {
+            'D' => _dirtPrefab,
+            'T' => tunnelPrefab,
+            'R' => rockPrefab,
+            'P' => playerPrefab,
+            'K' => pookaPrefab,
+            'F' => fygarPrefab,
+            _ => null
+        };
+    }
+
+    void CenterCameraOnGrid()
+    {
+        Camera mainCam = Camera.main;
+        if (mainCam == null) return;
+
+        float camX = (gridWidth * tileUnitSize) / 2f - tileUnitSize / 2f;
+        float camY = (gridHeight * tileUnitSize) / 2f - tileUnitSize / 2f;
+
+        mainCam.transform.position = new Vector3(camX, camY, -10);
+
+        // Adjust orthographic size to fit height (or width depending on aspect ratio)
+        float screenAspect = (float)Screen.width / Screen.height;
+        float targetWidth = gridWidth * tileUnitSize;
+        float targetHeight = gridHeight * tileUnitSize;
+
+        mainCam.orthographicSize = Mathf.Max(targetHeight / 2f, (targetWidth / screenAspect) / 2f);
+    }
+
+    public bool IsTunnelAt(Vector2 worldPos)
+    {
+        foreach (Transform child in transform)
+        {
+            if (child.CompareTag("Tunnel"))
+            {
+                if (Vector2.Distance(child.position, worldPos) < 0.1f)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }

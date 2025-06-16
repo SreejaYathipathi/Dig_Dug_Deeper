@@ -1,208 +1,296 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public abstract class EnemyController : MonoBehaviour
+public class EnemyController : MonoBehaviour
 {
-    public float moveDelay = 0.5f;
-    protected float _lastMoveTime;
+    public enum EnemyState { Wandering, Chasing, Ghost, Returning }
+    public EnemyState currentState = EnemyState.Wandering;
 
-    protected GridManager _gridManager;
-    protected Transform _player;
-    protected Vector2Int _gridPos;
+    public float moveSpeed = 2f;
+    public float ghostSpeed = 3f;
+    public float playerCheckInterval = 2f;
+    public float ghostDurationMin = 2f;
+    public float ghostDurationMax = 4f;
+    public float ghostGracePeriod = 3f;
 
+    public Sprite normalSprite;
     public Sprite ghostSprite;
-    private Sprite _originalSprite;
-    public Sprite rockDeathSprite;
+    public Sprite deathSprite;
 
-    protected enum EnemyState { Idle, Wander, Chase, Ghost }
-    protected EnemyState _state = EnemyState.Idle;
+    private Transform player;
+    private Rigidbody2D rb;
+    private SpriteRenderer sr;
 
-    public void Init(Vector2Int gridPos)
+    private bool isGhost = false;
+    private Coroutine pathCheckRoutine;
+
+    private float timeSinceLastPathFail = 0f;
+    private float ghostTimer = 0f;
+
+    private Vector3[] pathToPlayer;
+    private int pathIndex = 0;
+
+    // ✨ WANDERING movement logic
+    private float maxWanderDuration = 2f;
+    private float wanderTime = 0f;
+    private float wanderTimer = 0f;
+    private bool isWanderingMoving = false; // ✨ NEW
+    private Vector3 wanderTarget;
+
+    private void Start()
     {
-        _gridPos = gridPos;
-        _gridManager = FindObjectOfType<GridManager>();
-        _player = GameObject.FindGameObjectWithTag("Player").transform;
-        _originalSprite = GetComponent<SpriteRenderer>().sprite;
+        rb = GetComponent<Rigidbody2D>();
+        sr = GetComponent<SpriteRenderer>();
+        player = GameObject.FindGameObjectWithTag("Player").transform;
 
-        if (_player == null)
-        {
-            Debug.LogError("No GameObject with tag 'Player' found. Make sure the player is tagged correctly.");
-            return;
-        }
-
-        transform.position = _gridManager.GetWorldPosition(_gridPos.x, _gridPos.y);
-
-        StartCoroutine(WanderThenChase());
+        wanderTime = Random.Range(1f, maxWanderDuration); // how long to wander
+        PickNewWanderTarget();
     }
 
-    private IEnumerator WanderThenChase()
+    private void Update()
     {
-        _state = EnemyState.Wander;
-        Debug.Log($"{name} entered WANDER state");
+        if (GameManager.Instance.isGameOver) return;
 
-        float wanderDuration = 3f;
-        float wanderTimer = 0f;
-
-        while (wanderTimer < wanderDuration)
+        switch (currentState)
         {
-            yield return new WaitForSeconds(moveDelay);
-
-            Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
-            Vector2Int dir = directions[Random.Range(0, directions.Length)];
-            Vector2Int nextPos = _gridPos + dir;
-            GridCell cell = _gridManager.GetCell(nextPos.x, nextPos.y);
-
-            if (cell != null && cell.type == TileType.Dirt)
-            {
-                _gridPos = nextPos;
-                transform.position = _gridManager.GetWorldPosition(_gridPos.x, _gridPos.y);
-            }
-
-            wanderTimer += moveDelay;
-        }
-
-        _state = EnemyState.Chase;
-        Debug.Log($"{name} switched to CHASE state");
-    }
-
-    protected virtual void Update()
-    {
-
-        if (GameManager.Instance == null || GameManager.Instance.IsGameOver) return;
-
-        if (_state == EnemyState.Idle || _state == EnemyState.Wander) return;
-        if (Time.time - _lastMoveTime < moveDelay) return;
-
-        Vector2Int direction = GetMoveDirectionTowardPlayer();
-
-        if (direction != Vector2Int.zero)
-        {
-            Vector2Int nextPos = _gridPos + direction;
-            GridCell cell = _gridManager.GetCell(nextPos.x, nextPos.y);
-
-            bool canMove = false;
-
-            if (_state == EnemyState.Chase && cell != null && cell.type == TileType.Tunnel)
-            {
-                canMove = true;
-            }
-            else if (_state == EnemyState.Ghost && cell != null &&
-                     (cell.type == TileType.Tunnel || cell.type == TileType.Dirt))
-            {
-                canMove = true;
-            }
-
-            if (canMove)
-            {
-                _gridPos = nextPos;
-                transform.position = _gridManager.GetWorldPosition(_gridPos.x, _gridPos.y);
-            }
-            else if (_state == EnemyState.Chase)
-            {
-                StartCoroutine(GhostThroughDirt());
-            }
-
-            _lastMoveTime = Time.time;
+            case EnemyState.Wandering:
+                WanderInTunnels();
+                break;
+            case EnemyState.Chasing:
+                FollowTunnelPathToPlayer();
+                break;
+            case EnemyState.Ghost:
+                GhostMoveToPlayer();
+                break;
+            case EnemyState.Returning:
+                SearchForNearbyTunnel();
+                break;
         }
     }
 
-    protected Vector2Int GetMoveDirectionTowardPlayer()
+    void WanderInTunnels()
     {
-        Vector2Int playerPos = new Vector2Int(
-            Mathf.RoundToInt(_player.position.x / _gridManager.tileSize),
-            Mathf.RoundToInt(_player.position.y / _gridManager.tileSize)
-        );
+        wanderTimer += Time.deltaTime;
 
-        Vector2Int diff = playerPos - _gridPos;
-
-        List<Vector2Int> directions = new List<Vector2Int>();
-
-        if (Mathf.Abs(diff.x) > Mathf.Abs(diff.y))
+        if (!isWanderingMoving)
         {
-            directions.Add(new Vector2Int((int)Mathf.Sign(diff.x), 0));
-            directions.Add(new Vector2Int(0, (int)Mathf.Sign(diff.y)));
+            PickNewWanderTarget(); // ✨ pick next move
         }
         else
         {
-            directions.Add(new Vector2Int(0, (int)Mathf.Sign(diff.y)));
-            directions.Add(new Vector2Int((int)Mathf.Sign(diff.x), 0));
+            MoveTowards(wanderTarget, moveSpeed * 0.5f); // slower
+
+            if (Vector2.Distance(transform.position, wanderTarget) < 0.05f)
+            {
+                isWanderingMoving = false;
+            }
         }
 
-        directions.Add(-directions[0]);
-        directions.Add(-directions[1]);
+        if (wanderTimer >= wanderTime)
+        {
+            currentState = EnemyState.Chasing;
+            pathCheckRoutine = StartCoroutine(CheckForPlayerPathRoutine());
+        }
+    }
+
+    void PickNewWanderTarget()
+    {
+        Vector2Int currentPos = Vector2Int.RoundToInt(transform.position);
+        List<Vector2Int> tunnelOptions = new List<Vector2Int>();
+
+        Vector2Int[] directions = new Vector2Int[]
+        {
+        Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right
+        };
 
         foreach (var dir in directions)
         {
-            Vector2Int testPos = _gridPos + dir;
-            GridCell cell = _gridManager.GetCell(testPos.x, testPos.y);
-
-            if (cell != null && cell.type == TileType.Tunnel)
-                return dir;
+            Vector2Int neighbor = currentPos + dir;
+            if (GridManager.Instance.IsTunnelAt((Vector2)neighbor))
+            {
+                tunnelOptions.Add(neighbor);
+            }
         }
 
-        return Vector2Int.zero;
+        Debug.Log($"[{name}] Tunnel Neighbors: {tunnelOptions.Count}");
+
+        if (tunnelOptions.Count > 0)
+        {
+            Vector2Int chosen = tunnelOptions[Random.Range(0, tunnelOptions.Count)];
+            wanderTarget = new Vector3(chosen.x, chosen.y, 0);
+            isWanderingMoving = true;
+            Debug.Log($"[{name}] Wandering to {wanderTarget}");
+        }
+        else
+        {
+            wanderTarget = transform.position;
+            isWanderingMoving = false;
+            Debug.LogWarning($"[{name}] No tunnel neighbors to wander!");
+        }
     }
 
-    private IEnumerator GhostThroughDirt()
+    IEnumerator CheckForPlayerPathRoutine()
     {
-        _state = EnemyState.Ghost;
-        Debug.Log($"{name} entered GHOST state");
-
-        var renderer = GetComponent<SpriteRenderer>();
-        renderer.color = new Color(1, 1, 1, 0.5f); // transparent
-        if (ghostSprite != null)
-            renderer.sprite = ghostSprite;
-
         while (true)
         {
-            yield return new WaitForSeconds(moveDelay);
+            yield return new WaitForSeconds(playerCheckInterval);
 
-            Vector2Int direction = GetMoveDirectionTowardPlayer();
-            Vector2Int nextPos = _gridPos + direction;
-            GridCell cell = _gridManager.GetCell(nextPos.x, nextPos.y);
+            if (currentState == EnemyState.Ghost || currentState == EnemyState.Returning)
+                continue;
 
-            if (cell != null)
+            if (TryFindTunnelPathToPlayer())
             {
-                _gridPos = nextPos;
-                transform.position = _gridManager.GetWorldPosition(_gridPos.x, _gridPos.y);
+                currentState = EnemyState.Chasing;
+                timeSinceLastPathFail = 0f;
+            }
+            else
+            {
+                timeSinceLastPathFail += playerCheckInterval;
 
-                if (cell.type == TileType.Tunnel)
-                    break;
+                if (timeSinceLastPathFail >= ghostGracePeriod)
+                {
+                    EnterGhostMode();
+                    timeSinceLastPathFail = 0f;
+                }
             }
         }
-
-        renderer.color = Color.white;
-        renderer.sprite = _originalSprite;
-        _state = EnemyState.Chase;
-        Debug.Log($"{name} returned to CHASE state");
     }
 
-    private void OnTriggerEnter2D(Collider2D other)
+    bool TryFindTunnelPathToPlayer()
     {
-        if (other.CompareTag("Player"))
+        Vector2Int start = Vector2Int.RoundToInt(transform.position);
+        Vector2Int goal = Vector2Int.RoundToInt(player.position);
+
+        Queue<Vector2Int> frontier = new Queue<Vector2Int>();
+        Dictionary<Vector2Int, Vector2Int> cameFrom = new Dictionary<Vector2Int, Vector2Int>();
+
+        frontier.Enqueue(start);
+        cameFrom[start] = start;
+
+        Vector2Int[] directions = new Vector2Int[]
         {
-            Debug.Log($"{name} touched the player!");
+            Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right
+        };
 
-            PlayerController player = other.GetComponent<PlayerController>();
-            if (player != null)
+        while (frontier.Count > 0)
+        {
+            Vector2Int current = frontier.Dequeue();
+
+            if (current == goal)
             {
-                player.KillPlayer();
+                List<Vector3> path = new List<Vector3>();
+                Vector2Int step = goal;
+
+                while (step != start)
+                {
+                    path.Add(new Vector3(step.x, step.y, 0));
+                    step = cameFrom[step];
+                }
+
+                path.Reverse();
+                pathToPlayer = path.ToArray();
+                pathIndex = 0;
+                return true;
+            }
+
+            foreach (var dir in directions)
+            {
+                Vector2Int next = current + dir;
+
+                if (cameFrom.ContainsKey(next))
+                    continue;
+
+                if (GridManager.Instance.IsTunnelAt((Vector2)next))
+                {
+                    frontier.Enqueue(next);
+                    cameFrom[next] = current;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    void FollowTunnelPathToPlayer()
+    {
+        if (pathToPlayer == null || pathIndex >= pathToPlayer.Length)
+        {
+            currentState = EnemyState.Wandering;
+            return;
+        }
+
+        MoveTowards(pathToPlayer[pathIndex], moveSpeed);
+
+        if (Vector2.Distance(transform.position, pathToPlayer[pathIndex]) < 0.1f)
+        {
+            pathIndex++;
+        }
+    }
+
+    void EnterGhostMode()
+    {
+        currentState = EnemyState.Ghost;
+        isGhost = true;
+        ghostTimer = Random.Range(ghostDurationMin, ghostDurationMax);
+
+        if (ghostSprite != null)
+            sr.sprite = ghostSprite;
+
+        sr.sortingOrder = 10;
+    }
+
+    void GhostMoveToPlayer()
+    {
+        MoveTowards(player.position, ghostSpeed);
+        ghostTimer -= Time.deltaTime;
+
+        if (ghostTimer <= 0f)
+        {
+            currentState = EnemyState.Returning;
+        }
+    }
+
+    void SearchForNearbyTunnel()
+    {
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, 1.5f);
+
+        foreach (var hit in hits)
+        {
+            if (hit.CompareTag("Tunnel"))
+            {
+                ExitGhostMode();
+                return;
             }
         }
     }
 
-    public void ShowDeathAndDestroy(Sprite deathSprite, float delay = 0.3f)
+    void ExitGhostMode()
     {
-        StopAllCoroutines();
-        StartCoroutine(DeathSequence(deathSprite, delay));
+        isGhost = false;
+        currentState = EnemyState.Wandering;
+
+        if (normalSprite != null)
+            sr.sprite = normalSprite;
+
+        sr.sortingOrder = 0;
     }
 
-    private IEnumerator DeathSequence(Sprite deathSprite, float delay)
+    void MoveTowards(Vector3 target, float speed)
+    {
+        Vector3 dir = (target - transform.position).normalized;
+        transform.position += dir * speed * Time.deltaTime;
+    }
+
+    public void CrushMe()
     {
         GetComponent<SpriteRenderer>().sprite = deathSprite;
-        GameManager.Instance.EnemyDied();
-        yield return new WaitForSeconds(delay);
+        StartCoroutine(DestroySelf());
+    }
+
+    IEnumerator DestroySelf()
+    {
+        yield return new WaitForSeconds(0.3f);
         Destroy(gameObject);
     }
 }

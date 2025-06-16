@@ -119,6 +119,51 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &323293806
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 323293808}
+  - component: {fileID: 323293807}
+  m_Layer: 0
+  m_Name: GameManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &323293807
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 323293806}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32b8ef4df448ea44681c5ae873788e5c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isGameOver: 0
+--- !u!4 &323293808
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 323293806}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.53920156, y: 1.9528383, z: 215.60695}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &447122644
 GameObject:
   m_ObjectHideFlags: 0
@@ -442,54 +487,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1055155937
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1055155939}
-  - component: {fileID: 1055155938}
-  m_Layer: 0
-  m_Name: GameManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1055155938
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1055155937}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 32b8ef4df448ea44681c5ae873788e5c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  levelFiles:
-  - {fileID: 4900000, guid: c47427de9a1359046b530ec4e1ddf1f1, type: 3}
-  - {fileID: 4900000, guid: 882e145867c2674409e36dbf6572d7c5, type: 3}
-  - {fileID: 4900000, guid: a1b7dddea9bd4f84da860c34a7f0ba9b, type: 3}
---- !u!4 &1055155939
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1055155937}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4.3724403, y: 1.0722489, z: 0.41259548}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1210250772
 GameObject:
   m_ObjectHideFlags: 0
@@ -587,19 +584,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1adc247fca5fbba439adb9d80f8fc87f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tileSize: 1
-  dirtLayerPrefabs:
-  - {fileID: 3436210178444133832, guid: 581998d848895354e8d8cf6a12118690, type: 3}
-  - {fileID: 5496969087100996083, guid: aa3c840d7dafb2041b0a53b295ba4a4b, type: 3}
-  - {fileID: 2797370374587968381, guid: 48e49da016971fa489c883349b59ce09, type: 3}
-  - {fileID: 1837293455883258884, guid: b923c1de35f75e8469d3a0ed32a23bb0, type: 3}
+  tunnelPrefab: {fileID: 2310510786712788885, guid: c893ecc5e76858b469960149f7c20c0b, type: 3}
   rockPrefab: {fileID: 7155364404128059154, guid: 03723287c944fe444bec5f479289b47a, type: 3}
   playerPrefab: {fileID: 5044728018022273526, guid: 961ac94ae1cf8cb40a9189a4e25f786c, type: 3}
   pookaPrefab: {fileID: 8857641144270590770, guid: c07b476468cddc841b28f6ddbbfd80e5, type: 3}
   fygarPrefab: {fileID: 5658271551254213640, guid: e919eefce6b4e6b49af20d590e183476, type: 3}
-  levelFile: {fileID: 4900000, guid: c47427de9a1359046b530ec4e1ddf1f1, type: 3}
-  width: 12
-  height: 10
+  dirtVariants:
+  - {fileID: 3436210178444133832, guid: 581998d848895354e8d8cf6a12118690, type: 3}
+  - {fileID: 5496969087100996083, guid: aa3c840d7dafb2041b0a53b295ba4a4b, type: 3}
+  - {fileID: 2797370374587968381, guid: 48e49da016971fa489c883349b59ce09, type: 3}
+  levelFileName: Levels/Level_1
+  tileUnitSize: 1
 --- !u!4 &1288128676
 Transform:
   m_ObjectHideFlags: 0
@@ -609,7 +604,7 @@ Transform:
   m_GameObject: {fileID: 1288128674}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.50450337, y: -0.19454491, z: 0.4334789}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -665,7 +660,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -699,4 +694,4 @@ SceneRoots:
   - {fileID: 1288128676}
   - {fileID: 447122648}
   - {fileID: 1210250775}
-  - {fileID: 1055155939}
+  - {fileID: 323293808}

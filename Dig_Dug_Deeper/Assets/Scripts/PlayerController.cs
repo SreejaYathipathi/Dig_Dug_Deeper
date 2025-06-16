@@ -1,150 +1,104 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    public float moveDelay = 0.15f; // Delay between moves
-    private float _lastMoveTime;
-
-    [Header("Grid Position")]
-    [SerializeField] private Vector2Int _startingGridPos; // Set in Inspector
-    private Vector2Int _gridPos;
-
-
-    private GridManager _gridManager;
-    private float _tileSize = 1f;
-
-
+    public float moveTime = 0.1f; // smooth movement
+    public LayerMask obstacleLayer; // set this to detect dirt/walls
+    private bool isMoving = false;
+    private Vector2 input;
+    private Vector3 targetPos;
     public Sprite deathSprite;
-    private bool _isDead = false;
-
-
-    void Start()
-    {
-        if (_gridPos == Vector2Int.zero) // fallback if Init() wasn't called
-        {
-            Debug.LogWarning("[PlayerController] Init() was not called. Using _startingGridPos.");
-            Init(_startingGridPos); // default
-        }
-    }
-
-    public void Init(Vector2Int gridPos)
-    {
-        _gridManager = FindObjectOfType<GridManager>();
-        _gridPos = gridPos;
-
-        Vector2 offset = new Vector2(
-            -(_gridManager.width * _gridManager.tileSize) / 2f + _gridManager.tileSize / 2f,
-            -(_gridManager.height * _gridManager.tileSize) / 2f + _gridManager.tileSize / 2f
-        );
-
-        transform.position = new Vector2(
-            _gridPos.x * _gridManager.tileSize,
-            _gridPos.y * _gridManager.tileSize
-        ) + offset;
-    }
 
     void Update()
     {
-        if (Time.time - _lastMoveTime < moveDelay) return;
+        if (GameManager.Instance.isGameOver) return;
+        if (isMoving) return;
 
-        Vector2Int direction = Vector2Int.zero;
+        input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
 
-        if (Input.GetKey(KeyCode.W)) direction = Vector2Int.up;
-        if (Input.GetKey(KeyCode.S)) direction = Vector2Int.down;
-        if (Input.GetKey(KeyCode.A)) direction = Vector2Int.left;
-        if (Input.GetKey(KeyCode.D)) direction = Vector2Int.right;
+        // Only allow one axis at a time
+        if (Mathf.Abs(input.x) > 0.1f) input.y = 0;
 
-        if (direction != Vector2Int.zero)
+        if (input != Vector2.zero)
         {
-            TryMove(direction);
-            _lastMoveTime = Time.time;
-        }
+            Vector3 nextPos = transform.position + new Vector3(input.x, input.y, 0);
 
-        // Pump mechanic placeholder
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            Debug.Log("Start pump");
-            // TODO: pump straight line
+            // Bounds check
+            if (!GridManager.Instance.IsWithinBounds(nextPos))
+                return;
+
+            // Check only for obstacles (Rock, Indestructible)
+            Collider2D hit = Physics2D.OverlapPoint(nextPos);
+
+            if (hit != null)
+            {
+                Debug.Log($"Hit {hit.gameObject.name} on layer {LayerMask.LayerToName(hit.gameObject.layer)}");
+
+                if (hit.gameObject.layer == LayerMask.NameToLayer("Obstacle"))
+                {
+                    Debug.Log("Blocked by obstacle.");
+                    return;
+                }
+            }
+
+            DestroyDirtAt(nextPos);
+
+            StartCoroutine(MoveTo(nextPos));
         }
     }
 
-    void TryMove(Vector2Int dir)
+    void DestroyDirtAt(Vector3 position)
     {
-        Vector2Int targetPos = _gridPos + dir;
+        Transform dirtToDestroy = null;
 
-        // Out of bounds check
-        if (targetPos.x < 0 || targetPos.x >= _gridManager.width ||
-            targetPos.y < 0 || targetPos.y >= _gridManager.height)
-            return;
-
-        GridCell targetCell = _gridManager.GetCell(targetPos.x, targetPos.y);
-
-        // Block movement if the tile is rock or indestructible
-        if (targetCell != null &&
-            (targetCell.type == TileType.Rock || targetCell.type == TileType.Indestructible))
+        foreach (Transform child in GridManager.Instance.transform)
         {
-            Debug.Log("Blocked by rock or indestructible tile.");
-            return;
-        }
-
-        // Otherwise, allow movement
-        _gridPos = targetPos;
-
-        Vector2 offset = new Vector2(
-            -(_gridManager.width * _gridManager.tileSize) / 2f + _gridManager.tileSize / 2f,
-            -(_gridManager.height * _gridManager.tileSize) / 2f + _gridManager.tileSize / 2f
-        );
-
-        transform.position = new Vector2(
-            _gridPos.x * _gridManager.tileSize,
-            _gridPos.y * _gridManager.tileSize
-        ) + offset;
-
-        // Dig dirt if present
-        if (targetCell != null && targetCell.type == TileType.Dirt)
-        {
-            targetCell.ChangeToTunnel();
-
-            // Rock falling check
-            GridCell above = _gridManager.GetCell(targetPos.x, targetPos.y + 1);
-            if (above != null && above.type == TileType.Rock)
+            if (child.name.Contains("DirtTile") && Vector3.Distance(child.position, position) < 0.1f)
             {
-                RockController rock = above.GetComponent<RockController>();
-                if (rock != null)
-                {
-                    rock.TryStartFall();
-                }
+                dirtToDestroy = child;
+                break;
             }
         }
 
+        if (dirtToDestroy != null)
+        {
+            Destroy(dirtToDestroy.gameObject);
+
+            GameObject tunnel = Instantiate(GridManager.Instance.tunnelPrefab, position, Quaternion.identity, GridManager.Instance.transform);
+            tunnel.tag = "Tunnel";
+        }
     }
 
-    public void KillPlayer()
+    IEnumerator MoveTo(Vector3 dest)
     {
-        Debug.Log("Player died!");
-        GameManager.Instance.GameOver();
+        isMoving = true;
+        float t = 0;
 
+        Vector3 start = transform.position;
+        while (t < moveTime)
+        {
+            t += Time.deltaTime;
+            transform.position = Vector3.Lerp(start, dest, t / moveTime);
+            yield return null;
+        }
+
+        transform.position = dest;
+        isMoving = false;
+    }
+
+    public void CrushMe()
+    {
+        GetComponent<SpriteRenderer>().sprite = deathSprite;
+        GameManager.Instance.GameOver();
+        StartCoroutine(DestroySelf());
+    }
+
+    IEnumerator DestroySelf()
+    {
+        yield return new WaitForSeconds(0.3f);
         Destroy(gameObject);
     }
 
-    public void DieByRock()
-    {
-        if (_isDead) return;
-        _isDead = true;
-        StartCoroutine(PlayerDeathSequence());
-    }
-
-    private IEnumerator PlayerDeathSequence()
-    {
-        GetComponent<SpriteRenderer>().sprite = deathSprite;
-        yield return new WaitForSeconds(0.5f);
-
-        // Show game over screen here
-        Debug.Log("Game Over!");
-        Time.timeScale = 0f; // optional: pause game
-
-        // Optionally, call UIManager.ShowGameOver()
-    }
 }

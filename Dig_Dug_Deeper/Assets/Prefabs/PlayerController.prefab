@@ -9,10 +9,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8568425023035068374}
-  - component: {fileID: 7173742874788257412}
   - component: {fileID: 5665952725254085510}
   - component: {fileID: 4758187179029470915}
   - component: {fileID: 3453368946780694132}
+  - component: {fileID: 6756266877026153763}
   m_Layer: 0
   m_Name: PlayerController
   m_TagString: Player
@@ -35,21 +35,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &7173742874788257412
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5044728018022273526}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0f8f7b7c4c1ef564bb96464131ff9586, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveDelay: 0.15
-  _startingGridPos: {x: 0, y: 0}
-  deathSprite: {fileID: 0}
 --- !u!212 &5665952725254085510
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -177,3 +162,19 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!114 &6756266877026153763
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5044728018022273526}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f8f7b7c4c1ef564bb96464131ff9586, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveTime: 0.1
+  obstacleLayer:
+    serializedVersion: 2
+    m_Bits: 64

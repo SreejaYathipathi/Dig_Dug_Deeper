@@ -5,15 +5,16 @@ TagManager:
   serializedVersion: 2
   tags:
   - Enemy
+  - Tunnel
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Dirt
   - Water
   - UI
-  - 
-  - 
+  - Obstacle
+  - Tunnel
   - 
   - 
   - 

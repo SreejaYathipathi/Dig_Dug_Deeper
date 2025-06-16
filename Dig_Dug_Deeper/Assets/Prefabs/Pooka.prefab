@@ -10,8 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 4822056664289825654}
   - component: {fileID: 9147452779985989817}
-  - component: {fileID: 1719283313745340926}
   - component: {fileID: -9081301143060253587}
+  - component: {fileID: 5871640874957702738}
   m_Layer: 0
   m_Name: Pooka
   m_TagString: Enemy
@@ -88,20 +88,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &1719283313745340926
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8857641144270590770}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d3f656921ca7a7149959189f19d2869a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveDelay: 0.5
-  rockDeathSprite: {fileID: 0}
 --- !u!61 &-9081301143060253587
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -148,3 +134,25 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1.31, y: 1.41}
   m_EdgeRadius: 0
+--- !u!114 &5871640874957702738
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8857641144270590770}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3f656921ca7a7149959189f19d2869a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentState: 0
+  moveSpeed: 2
+  ghostSpeed: 1
+  playerCheckInterval: 2
+  ghostDurationMin: 1
+  ghostDurationMax: 2
+  ghostGracePeriod: 3
+  normalSprite: {fileID: 21300000, guid: d3c16e1b52a666241ae25b1644c6bab9, type: 3}
+  ghostSprite: {fileID: 21300000, guid: 8feb8825107627d4e98172e0433ded5a, type: 3}
+  deathSprite: {fileID: 0}

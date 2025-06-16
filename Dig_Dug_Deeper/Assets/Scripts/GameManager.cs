@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
+    // Singleton instance accessible from anywhere
     public static GameManager Instance { get; private set; }
 
     public bool isGameOver = false;
@@ -16,6 +17,7 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
     }
 
+    // Call this to mark the game as over
     public void GameOver()
     {
         isGameOver = true;

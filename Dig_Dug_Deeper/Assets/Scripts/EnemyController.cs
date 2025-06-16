@@ -4,38 +4,43 @@ using UnityEngine;
 
 public class EnemyController : MonoBehaviour
 {
+    // Enum for enemy AI states
     public enum EnemyState { Wandering, Chasing, Ghost, Returning }
     public EnemyState currentState = EnemyState.Wandering;
 
+    // Movement and behavior settings
     public float moveSpeed = 2f;
     public float ghostSpeed = 3f;
     public float playerCheckInterval = 2f;
-    public float ghostDurationMin = 2f;
-    public float ghostDurationMax = 4f;
     public float ghostGracePeriod = 3f;
 
+    // Sprites for different enemy states
     public Sprite normalSprite;
     public Sprite ghostSprite;
     public Sprite deathSprite;
 
+    // References
     private Transform player;
     private Rigidbody2D rb;
     private SpriteRenderer sr;
 
+    // State flags
     private bool isGhost = false;
     private Coroutine pathCheckRoutine;
+    private bool isDead = false;
 
+    // Ghosting and pathfinding
     private float timeSinceLastPathFail = 0f;
-    private float ghostTimer = 0f;
+    private Vector3 ghostTargetPosition;
 
     private Vector3[] pathToPlayer;
     private int pathIndex = 0;
 
-    // ✨ WANDERING movement logic
-    private float maxWanderDuration = 2f;
+    // Wandering logic
+    public float maxWanderDuration = 2f;
     private float wanderTime = 0f;
     private float wanderTimer = 0f;
-    private bool isWanderingMoving = false; // ✨ NEW
+    private bool isWanderingMoving = false;
     private Vector3 wanderTarget;
 
     private void Start()
@@ -44,14 +49,17 @@ public class EnemyController : MonoBehaviour
         sr = GetComponent<SpriteRenderer>();
         player = GameObject.FindGameObjectWithTag("Player").transform;
 
+        // Initialize wandering timer and target
         wanderTime = Random.Range(1f, maxWanderDuration); // how long to wander
         PickNewWanderTarget();
+        pathCheckRoutine = StartCoroutine(CheckForPlayerPathRoutine());
     }
 
     private void Update()
     {
-        if (GameManager.Instance.isGameOver) return;
+        if (GameManager.Instance.isGameOver || isDead) return;
 
+        // Execute behavior based on state
         switch (currentState)
         {
             case EnemyState.Wandering:
@@ -61,7 +69,7 @@ public class EnemyController : MonoBehaviour
                 FollowTunnelPathToPlayer();
                 break;
             case EnemyState.Ghost:
-                GhostMoveToPlayer();
+                GhostMoveToTarget();
                 break;
             case EnemyState.Returning:
                 SearchForNearbyTunnel();
@@ -69,13 +77,14 @@ public class EnemyController : MonoBehaviour
         }
     }
 
+    // Wandering movement between tunnel tiles
     void WanderInTunnels()
     {
         wanderTimer += Time.deltaTime;
 
         if (!isWanderingMoving)
         {
-            PickNewWanderTarget(); // ✨ pick next move
+            PickNewWanderTarget(); // pick next move
         }
         else
         {
@@ -94,6 +103,7 @@ public class EnemyController : MonoBehaviour
         }
     }
 
+    // Picks a random neighboring tunnel tile to wander to
     void PickNewWanderTarget()
     {
         Vector2Int currentPos = Vector2Int.RoundToInt(transform.position);
@@ -130,6 +140,7 @@ public class EnemyController : MonoBehaviour
         }
     }
 
+    // Periodically checks if a tunnel path to the player can be found
     IEnumerator CheckForPlayerPathRoutine()
     {
         while (true)
@@ -157,6 +168,7 @@ public class EnemyController : MonoBehaviour
         }
     }
 
+    // Attempts to find a tunnel-based path to the player
     bool TryFindTunnelPathToPlayer()
     {
         Vector2Int start = Vector2Int.RoundToInt(transform.position);
@@ -212,27 +224,63 @@ public class EnemyController : MonoBehaviour
         return false;
     }
 
+    // Follows the calculated tunnel path to the player
     void FollowTunnelPathToPlayer()
     {
+
         if (pathToPlayer == null || pathIndex >= pathToPlayer.Length)
         {
             currentState = EnemyState.Wandering;
             return;
         }
 
-        MoveTowards(pathToPlayer[pathIndex], moveSpeed);
+        Vector3 nextTarget = pathToPlayer[pathIndex];
 
-        if (Vector2.Distance(transform.position, pathToPlayer[pathIndex]) < 0.1f)
+        // If the next tile is now blocked by a rock or obstacle
+        if (IsBlocked(nextTarget))
+        {
+            Debug.LogWarning($"[{name}] Path blocked at {nextTarget}. Recalculating...");
+
+            if (TryFindTunnelPathToPlayer())
+            {
+                Debug.Log($"[{name}] Recalculated new path to player.");
+            }
+            else
+            {
+                Debug.LogWarning($"[{name}] Could not find new path. Entering Ghost Mode.");
+                EnterGhostMode();
+            }
+
+            return;
+        }
+
+        // Normal movement toward current path point
+        MoveTowards(nextTarget, moveSpeed);
+
+        if (Vector2.Distance(transform.position, nextTarget) < 0.1f)
         {
             pathIndex++;
         }
     }
 
+    // Checks whether a tile is now blocked by a Rock or Indestructible tile
+    bool IsBlocked(Vector3 worldPos)
+    {
+        Collider2D hit = Physics2D.OverlapPoint(worldPos);
+        if (hit == null) return false;
+
+        string name = hit.gameObject.name;
+        return name.Contains("Rock") || name.Contains("Indestructible");
+    }
+
+    // Switches the enemy into ghost mode
     void EnterGhostMode()
     {
+
         currentState = EnemyState.Ghost;
         isGhost = true;
-        ghostTimer = Random.Range(ghostDurationMin, ghostDurationMax);
+
+        ghostTargetPosition = player.position; //Save player's location at that moment
 
         if (ghostSprite != null)
             sr.sprite = ghostSprite;
@@ -240,17 +288,50 @@ public class EnemyController : MonoBehaviour
         sr.sortingOrder = 10;
     }
 
-    void GhostMoveToPlayer()
+    // Moves through walls toward the stored player location
+    void GhostMoveToTarget()
     {
-        MoveTowards(player.position, ghostSpeed);
-        ghostTimer -= Time.deltaTime;
+        MoveTowards(ghostTargetPosition, ghostSpeed);
 
-        if (ghostTimer <= 0f)
+        if (Vector2.Distance(transform.position, ghostTargetPosition) < 0.05f)
         {
-            currentState = EnemyState.Returning;
+            ExitGhostMode();
+
+            // Immediately check for tunnel and go into Wandering if found
+            if (IsTunnelNearby())
+            {
+                currentState = EnemyState.Wandering;
+                wanderTimer = 0f;
+                wanderTime = Random.Range(1f, maxWanderDuration);
+                PickNewWanderTarget();
+            }
+            else
+            {
+                currentState = EnemyState.Returning; // fallback
+            }
         }
     }
 
+    // Checks for adjacent tunnel tiles
+    bool IsTunnelNearby()
+    {
+        Vector2Int currentPos = Vector2Int.RoundToInt(transform.position);
+        Vector2Int[] directions = new Vector2Int[]
+        {
+        Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right
+        };
+
+        foreach (var dir in directions)
+        {
+            Vector2Int checkPos = currentPos + dir;
+            if (GridManager.Instance.IsTunnelAt((Vector2)checkPos))
+                return true;
+        }
+
+        return false;
+    }
+
+    // Searches for tunnel using OverlapCircle in Returning state
     void SearchForNearbyTunnel()
     {
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, 1.5f);
@@ -260,15 +341,25 @@ public class EnemyController : MonoBehaviour
             if (hit.CompareTag("Tunnel"))
             {
                 ExitGhostMode();
+
+                // Switch to Wandering
+                currentState = EnemyState.Wandering;
+
+                // Reset wander timer
+                wanderTimer = 0f;
+                wanderTime = Random.Range(1f, maxWanderDuration);
+
+                PickNewWanderTarget();
                 return;
             }
         }
     }
 
+    // Reverts ghost visual effects
     void ExitGhostMode()
     {
+
         isGhost = false;
-        currentState = EnemyState.Wandering;
 
         if (normalSprite != null)
             sr.sprite = normalSprite;
@@ -276,18 +367,24 @@ public class EnemyController : MonoBehaviour
         sr.sortingOrder = 0;
     }
 
+    // Moves the object toward a world position at a given speed
     void MoveTowards(Vector3 target, float speed)
     {
         Vector3 dir = (target - transform.position).normalized;
         transform.position += dir * speed * Time.deltaTime;
     }
 
+    // Called when enemy is crushed
     public void CrushMe()
     {
+        if (isDead) return; // prevent double-call
+        isDead = true;
+
         GetComponent<SpriteRenderer>().sprite = deathSprite;
         StartCoroutine(DestroySelf());
     }
 
+    // Destroys enemy after delay
     IEnumerator DestroySelf()
     {
         yield return new WaitForSeconds(0.3f);

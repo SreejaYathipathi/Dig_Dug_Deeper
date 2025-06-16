@@ -4,12 +4,12 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    public float moveTime = 0.1f; // smooth movement
-    public LayerMask obstacleLayer; // set this to detect dirt/walls
-    private bool isMoving = false;
-    private Vector2 input;
-    private Vector3 targetPos;
-    public Sprite deathSprite;
+    public float moveTime = 0.1f; // Time taken to move between tiles
+    public LayerMask obstacleLayer; // Used to detect obstacles like rocks and indestructible walls
+    private bool isMoving = false; // Whether the player is currently moving
+    private Vector2 input; // Input direction
+    private Vector3 targetPos; // Destination position
+    public Sprite deathSprite; // Sprite to show on death
 
     void Update()
     {
@@ -49,10 +49,12 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    // Destroys dirt tile and spawns a tunnel at the given position
     void DestroyDirtAt(Vector3 position)
     {
         Transform dirtToDestroy = null;
 
+        // Look for a dirt tile very close to the given position
         foreach (Transform child in GridManager.Instance.transform)
         {
             if (child.name.Contains("DirtTile") && Vector3.Distance(child.position, position) < 0.1f)
@@ -62,15 +64,19 @@ public class PlayerController : MonoBehaviour
             }
         }
 
+        // If found, destroy dirt and spawn a tunnel
         if (dirtToDestroy != null)
         {
             Destroy(dirtToDestroy.gameObject);
 
             GameObject tunnel = Instantiate(GridManager.Instance.tunnelPrefab, position, Quaternion.identity, GridManager.Instance.transform);
             tunnel.tag = "Tunnel";
+
+            ScoreManager.Instance?.AddScore(10);
         }
     }
 
+    // Smoothly move player to the destination over time
     IEnumerator MoveTo(Vector3 dest)
     {
         isMoving = true;
@@ -88,6 +94,7 @@ public class PlayerController : MonoBehaviour
         isMoving = false;
     }
 
+    // Called when the player is crushed by a rock
     public void CrushMe()
     {
         GetComponent<SpriteRenderer>().sprite = deathSprite;
@@ -95,6 +102,7 @@ public class PlayerController : MonoBehaviour
         StartCoroutine(DestroySelf());
     }
 
+    // Delay before actually destroying the player object
     IEnumerator DestroySelf()
     {
         yield return new WaitForSeconds(0.3f);

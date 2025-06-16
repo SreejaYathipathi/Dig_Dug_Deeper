@@ -77,7 +77,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: cfb2b752dbae99948a28c8d6a97c3cd5, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 116d65934acd7fa44bdffeaac9c8cb09, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -150,9 +150,8 @@ MonoBehaviour:
   moveSpeed: 2
   ghostSpeed: 1
   playerCheckInterval: 2
-  ghostDurationMin: 1
-  ghostDurationMax: 2
   ghostGracePeriod: 3
-  normalSprite: {fileID: 21300000, guid: cfb2b752dbae99948a28c8d6a97c3cd5, type: 3}
+  normalSprite: {fileID: 21300000, guid: 116d65934acd7fa44bdffeaac9c8cb09, type: 3}
   ghostSprite: {fileID: 21300000, guid: 8feb8825107627d4e98172e0433ded5a, type: 3}
   deathSprite: {fileID: 0}
+  maxWanderDuration: 5

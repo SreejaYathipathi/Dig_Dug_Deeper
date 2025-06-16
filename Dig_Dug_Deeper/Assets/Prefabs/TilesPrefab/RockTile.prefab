@@ -101,7 +101,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   checkDelay: 0.3
-  fallSpeed: 5
+  fallSpeed: 2
   shatteredSprite: {fileID: 21300000, guid: d3c16e1b52a666241ae25b1644c6bab9, type: 3}
 --- !u!61 &5723699884744678034
 BoxCollider2D:

@@ -5,7 +5,7 @@ using UnityEngine;
 public class RockController : MonoBehaviour
 {
     public float checkDelay = 0.3f; // Delay before starting to fall after detecting empty space
-    public float fallSpeed = 5f; // Speed at which the rock falls
+    public float fallSpeed = 3f; // Speed at which the rock falls
     public Sprite shatteredSprite; // Sprite to show when rock shatters
     public float shortFallDestroyDelay = 1f; // Delay before destroying rock if it falls a short distance
 
@@ -48,6 +48,7 @@ public class RockController : MonoBehaviour
     // Handles the full fall behavior
     IEnumerator FallRoutine()
     {
+        yield return null;
         isFalling = true;
         int fallDistance = 0;
         Vector2 direction = Vector2.down;
@@ -57,18 +58,15 @@ public class RockController : MonoBehaviour
             Vector3 currentPos = transform.position;
             Vector2 nextPos = (Vector2)currentPos + direction;
 
-            // Stop falling if something is in the next position
             if (!IsEmpty(nextPos))
             {
                 isFalling = false;
 
-                // Shatter if it fell a long enough distance
                 if (fallDistance > 2)
                 {
                     if (shatteredSprite != null)
                         GetComponent<SpriteRenderer>().sprite = shatteredSprite;
 
-                    // Leave tunnel where rock shattered
                     Instantiate(GridManager.Instance.tunnelPrefab, transform.position, Quaternion.identity, GridManager.Instance.transform);
 
                     yield return new WaitForSeconds(0.3f);
@@ -76,7 +74,6 @@ public class RockController : MonoBehaviour
                 }
                 else
                 {
-                    // Wait a configurable delay before shattering on short fall
                     yield return new WaitForSeconds(shortFallDestroyDelay);
                     StartCoroutine(DestroyAfterDelay());
                 }
@@ -84,16 +81,20 @@ public class RockController : MonoBehaviour
                 yield break;
             }
 
-            // Leave tunnel behind before moving
+            // Leave tunnel behind at the current position
             Instantiate(GridManager.Instance.tunnelPrefab, currentPos, Quaternion.identity, GridManager.Instance.transform);
 
-            // Move to next tile
+            // Animate rock falling to next tile
             Vector3 end = currentPos + (Vector3)direction;
-            float t = 0;
-            while (t < 1f)
+            float t = 0f;
+            float duration = 1f / fallSpeed;
+            Debug.DrawLine(currentPos, end, Color.yellow, 1f);
+
+            while (t < duration)
             {
-                t += Time.deltaTime * fallSpeed;
-                transform.position = Vector3.Lerp(currentPos, end, t);
+                t += Time.deltaTime;
+                float progress = Mathf.Clamp01(t / duration);
+                transform.position = Vector3.Lerp(currentPos, end, progress);
                 yield return null;
             }
 
@@ -113,6 +114,9 @@ public class RockController : MonoBehaviour
                     hit.GetComponent<EnemyController>()?.CrushMe();
                 }
             }
+
+            // Wait one frame before continuing to fall
+            yield return null;
         }
     }
 

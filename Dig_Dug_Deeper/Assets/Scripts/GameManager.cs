@@ -20,6 +20,8 @@ public class GameManager : MonoBehaviour
     // Call this to mark the game as over
     public void GameOver()
     {
+        if (isGameOver) return;
+
         isGameOver = true;
         Debug.Log("Game Over!");
     }

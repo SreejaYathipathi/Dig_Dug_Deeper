@@ -171,6 +171,11 @@ public class EnemyController : MonoBehaviour
     // Attempts to find a tunnel-based path to the player
     bool TryFindTunnelPathToPlayer()
     {
+
+        if (GameManager.Instance.isGameOver || isDead)
+            return false;
+
+
         Vector2Int start = Vector2Int.RoundToInt(transform.position);
         Vector2Int goal = Vector2Int.RoundToInt(player.position);
 

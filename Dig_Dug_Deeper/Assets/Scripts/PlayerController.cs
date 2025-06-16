@@ -99,6 +99,7 @@ public class PlayerController : MonoBehaviour
     {
         GetComponent<SpriteRenderer>().sprite = deathSprite;
         GameManager.Instance.GameOver();
+        FindObjectOfType<UIManager>()?.TriggerGameOver();
         StartCoroutine(DestroySelf());
     }
 

@@ -5,7 +5,7 @@ using UnityEngine;
 public class EnemyController : MonoBehaviour
 {
     // Enum for enemy AI states
-    public enum EnemyState { Wandering, Chasing, Ghost, Returning }
+    public enum EnemyState { Wandering, Chasing, Ghost, Returning, FireBreath }
     public EnemyState currentState = EnemyState.Wandering;
 
     // Movement and behavior settings
@@ -20,28 +20,28 @@ public class EnemyController : MonoBehaviour
     public Sprite deathSprite;
 
     // References
-    private Transform player;
-    private Rigidbody2D rb;
-    private SpriteRenderer sr;
+    protected Transform player;
+    protected Rigidbody2D rb;
+    protected SpriteRenderer sr;
 
     // State flags
-    private bool isGhost = false;
-    private Coroutine pathCheckRoutine;
-    private bool isDead = false;
+    protected bool isGhost = false;
+    protected Coroutine pathCheckRoutine;
+    protected bool isDead = false;
 
     // Ghosting and pathfinding
-    private float timeSinceLastPathFail = 0f;
-    private Vector3 ghostTargetPosition;
+    protected float timeSinceLastPathFail = 0f;
+    protected Vector3 ghostTargetPosition;
 
-    private Vector3[] pathToPlayer;
-    private int pathIndex = 0;
+    protected Vector3[] pathToPlayer;
+    protected int pathIndex = 0;
 
     // Wandering logic
     public float maxWanderDuration = 2f;
-    private float wanderTime = 0f;
-    private float wanderTimer = 0f;
-    private bool isWanderingMoving = false;
-    private Vector3 wanderTarget;
+    protected float wanderTime = 0f;
+    protected float wanderTimer = 0f;
+    protected bool isWanderingMoving = false;
+    protected Vector3 wanderTarget;
 
     private void Start()
     {
@@ -55,7 +55,7 @@ public class EnemyController : MonoBehaviour
         pathCheckRoutine = StartCoroutine(CheckForPlayerPathRoutine());
     }
 
-    private void Update()
+    protected virtual void Update()
     {
         if (GameManager.Instance.isGameOver || isDead) return;
 
@@ -229,6 +229,22 @@ public class EnemyController : MonoBehaviour
         return false;
     }
 
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (isDead || GameManager.Instance.isGameOver)
+            return;
+
+        if (other.CompareTag("Player"))
+        {
+            Debug.Log($"{name} touched the player — killing player.");
+            PlayerController player = other.GetComponent<PlayerController>();
+            if (player != null)
+            {
+                player.CrushMe();
+            }
+        }
+    }
+
     // Follows the calculated tunnel path to the player
     void FollowTunnelPathToPlayer()
     {
@@ -290,7 +306,7 @@ public class EnemyController : MonoBehaviour
         if (ghostSprite != null)
             sr.sprite = ghostSprite;
 
-        sr.sortingOrder = 10;
+        sr.sortingOrder = 5;
     }
 
     // Moves through walls toward the stored player location
@@ -369,7 +385,7 @@ public class EnemyController : MonoBehaviour
         if (normalSprite != null)
             sr.sprite = normalSprite;
 
-        sr.sortingOrder = 0;
+        sr.sortingOrder = 1;
     }
 
     // Moves the object toward a world position at a given speed

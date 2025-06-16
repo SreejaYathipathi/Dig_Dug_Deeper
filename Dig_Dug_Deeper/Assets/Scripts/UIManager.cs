@@ -1,11 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class UIManager : MonoBehaviour
 {
     public GameObject gameOverMenu;
+    [SerializeField] private TextMeshProUGUI lastScoreText;
 
     void Start()
     {
@@ -29,6 +31,11 @@ public class UIManager : MonoBehaviour
         {
             gameOverMenu.SetActive(true);
             Time.timeScale = 0f; // Pause game
+        }
+
+        if (lastScoreText != null)
+        {
+            lastScoreText.text = "Last Score: " + ScoreManager.Instance.LastRunScore;
         }
     }
 

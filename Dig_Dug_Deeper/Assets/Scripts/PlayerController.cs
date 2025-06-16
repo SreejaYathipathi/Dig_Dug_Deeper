@@ -10,6 +10,7 @@ public class PlayerController : MonoBehaviour
     private Vector2 input; // Input direction
     private Vector3 targetPos; // Destination position
     public Sprite deathSprite; // Sprite to show on death
+    [SerializeField] private float deathDelay = 0.5f;
 
     void Update()
     {
@@ -98,9 +99,25 @@ public class PlayerController : MonoBehaviour
     public void CrushMe()
     {
         GetComponent<SpriteRenderer>().sprite = deathSprite;
+
+        // Disable movement immediately
+        enabled = false;
+
+        // Start delayed Game Over sequence
+        StartCoroutine(HandleDeath());
+    }
+
+    private IEnumerator HandleDeath()
+    {
+        yield return new WaitForSeconds(deathDelay); // wait to show death sprite
+
+        ScoreManager.Instance.EvaluateHighScore();
         GameManager.Instance.GameOver();
         FindObjectOfType<UIManager>()?.TriggerGameOver();
-        StartCoroutine(DestroySelf());
+
+        yield return new WaitForSeconds(0.3f); // optional: hold longer before removing
+
+        Destroy(gameObject);
     }
 
     // Delay before actually destroying the player object

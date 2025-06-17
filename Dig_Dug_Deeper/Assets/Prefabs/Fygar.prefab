@@ -165,6 +165,7 @@ MonoBehaviour:
   - {fileID: -5081703368270037933, guid: 5016dfa03155631499eaac7a2913adaa, type: 3}
   - {fileID: -4905568860167515586, guid: 5016dfa03155631499eaac7a2913adaa, type: 3}
   - {fileID: 6607891283202037224, guid: 5016dfa03155631499eaac7a2913adaa, type: 3}
+  animator: {fileID: 8300509917500281667}
   firePrefab: {fileID: 7313938338418756585, guid: cef3e68746564b6469bc3fc9f5532f89, type: 3}
   fireRange: 5
   fireDelay: 0.5

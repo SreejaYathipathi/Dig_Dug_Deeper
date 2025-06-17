@@ -59,13 +59,19 @@ public class EnemyController : MonoBehaviour
     private Queue<bool> inflateRequests = new Queue<bool>();
     private bool isInflateCoroutineRunning = false;
 
-    private Animator animator;
+    [SerializeField] private Animator animator; // assign in Inspector
+
+    // Animator parameter hashes for efficiency
+    private static readonly int WalkTrigger = Animator.StringToHash("Walk");
+    private static readonly int GhostTrigger = Animator.StringToHash("Ghost");
+    private static readonly int InflateTrigger = Animator.StringToHash("Inflate");
+    private static readonly int DeflateTrigger = Animator.StringToHash("Deflate");
+    private static readonly int DieTrigger = Animator.StringToHash("Die");
 
     protected void Awake()
     {
-        animator = GetComponent<Animator>();
+        //animator = GetComponent<Animator>();
         GameManager.Instance?.RegisterEnemy(this);
-        animator = GetComponent<Animator>();
     }
 
     /// <summary>
@@ -110,55 +116,31 @@ public class EnemyController : MonoBehaviour
         if (GameManager.Instance.isGameOver || isDead || isInflating)
             return;
 
-        // Execute state-specific behavior
+        // Handle state logic (move, chase, etc)
         switch (currentState)
         {
             case EnemyState.Wandering:
                 WanderInTunnels();
+                if (animator != null) animator.SetTrigger(WalkTrigger);
                 break;
             case EnemyState.Chasing:
                 FollowTunnelPathToPlayer();
+                if (animator != null) animator.SetTrigger(WalkTrigger);
                 break;
             case EnemyState.Ghost:
                 GhostMoveToTarget();
+                if (animator != null) animator.SetTrigger(GhostTrigger);
                 break;
             case EnemyState.Returning:
                 SearchForNearbyTunnel();
-                break;
-        }
-
-        switch (currentState)
-        {
-            case EnemyState.Wandering:
-                SetAnimatorActive(true); 
-                break;
-            case EnemyState.Chasing:
-                SetAnimatorActive(true);
-                break;
-            case EnemyState.Ghost:
-                SetAnimatorActive(false);
-                sr.sprite = ghostSprite; 
-                break;
-            case EnemyState.Returning:
-                SetAnimatorActive(true);
+                if (animator != null) animator.SetTrigger(WalkTrigger);
                 break;
             case EnemyState.FireBreath:
-                SetAnimatorActive(true);
+                // Optional: Add custom trigger
+                if (animator != null) animator.SetTrigger(WalkTrigger);
                 break;
         }
 
-        
-        if (isInflating)
-        {
-            SetAnimatorActive(false);
-            sr.sprite = inflateSprites[inflateStage - 1]; 
-        }
-    }
-
-    private void SetAnimatorActive(bool on)
-    {
-        if (animator != null)
-            animator.enabled = on;
     }
 
     /// <summary>
@@ -268,9 +250,11 @@ public class EnemyController : MonoBehaviour
         if (inflateStage >= maxInflateStage) return;
 
         inflateRequests.Enqueue(true);
-
         if (!isInflateCoroutineRunning)
             StartCoroutine(ProcessInflateQueue());
+
+        // Trigger inflate animation
+        if (animator != null) animator.SetTrigger(InflateTrigger);
     }
 
     /// <summary>
@@ -279,17 +263,11 @@ public class EnemyController : MonoBehaviour
     IEnumerator ProcessInflateQueue()
     {
         isInflateCoroutineRunning = true;
-
         while (inflateRequests.Count > 0)
         {
-            // Process one inflate stage per interval
             inflateRequests.Dequeue();
-
             isInflating = true;
             inflateStage++;
-
-            if (inflateSprites != null && inflateStage - 1 < inflateSprites.Length)
-                sr.sprite = inflateSprites[inflateStage - 1];
 
             if (inflateStage >= maxInflateStage)
             {
@@ -298,14 +276,12 @@ public class EnemyController : MonoBehaviour
                 break;
             }
 
-            // Wait for minimum interval before allowing next stage
             if (deflateRoutine != null)
                 StopCoroutine(deflateRoutine);
             deflateRoutine = StartCoroutine(DeflateOverTime());
 
             yield return new WaitForSeconds(0.5f);
         }
-
         isInflateCoroutineRunning = false;
     }
 
@@ -314,15 +290,14 @@ public class EnemyController : MonoBehaviour
     /// </summary>
     IEnumerator DeflateOverTime()
     {
+        if (animator != null) animator.SetTrigger(DeflateTrigger);
         yield return new WaitForSeconds(deflateDelay);
 
         if (inflateStage >= maxInflateStage)
             yield break;
 
         inflateStage = 0;
-        sr.sprite = normalSprite;
         isInflating = false;
-        SetAnimatorActive(true);
     }
 
     /// <summary>
@@ -639,7 +614,7 @@ public class EnemyController : MonoBehaviour
         if (isDead) return;
         isDead = true;
 
-        GetComponent<SpriteRenderer>().sprite = deathSprite;
+        if (animator != null) animator.SetTrigger(DieTrigger);
 
         ScoreManager.Instance?.AddScore(scoreValue);
 

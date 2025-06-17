@@ -15,6 +15,8 @@ public class FygarController : EnemyController
     private float fireTimer;
     private List<GameObject> activeFire = new List<GameObject>();
 
+    // Animator parameter hash
+    private static readonly int FireBreathTrigger = Animator.StringToHash("FireBreath");
 
     private void Update()
     {
@@ -35,7 +37,7 @@ public class FygarController : EnemyController
                 }
             }
         }
-
+        
         if (activeFire.Count > 0)
         {
             CheckPlayerInFire();
@@ -82,6 +84,10 @@ public class FygarController : EnemyController
 
     private IEnumerator FireBreathRoutine(Vector2 direction)
     {
+
+        if (animator != null)
+            animator.SetTrigger(FireBreathTrigger);
+
         currentState = EnemyState.FireBreath;
         isWanderingMoving = false;
         isPreparingToFire = true;

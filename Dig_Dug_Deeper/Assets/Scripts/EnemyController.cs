@@ -59,7 +59,7 @@ public class EnemyController : MonoBehaviour
     private Queue<bool> inflateRequests = new Queue<bool>();
     private bool isInflateCoroutineRunning = false;
 
-    [SerializeField] private Animator animator; // assign in Inspector
+    [SerializeField] protected Animator animator; // assign in Inspector
 
     // Animator parameter hashes for efficiency
     private static readonly int WalkTrigger = Animator.StringToHash("Walk");

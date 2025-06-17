@@ -77,7 +77,9 @@ public class LevelTransitionManager : MonoBehaviour
     /// </summary>
     private void UpdateEnemiesForCurrentLevel()
     {
-        EnemyController[] allEnemies = FindObjectsOfType<EnemyController>();
+        EnemyController[] allEnemies = Object.FindObjectsByType<EnemyController>(
+            FindObjectsSortMode.None
+        );
         int level = LevelManager.Instance.currentLevel;
 
         foreach (var enemy in allEnemies)

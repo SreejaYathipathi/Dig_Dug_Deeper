@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 8191617865483747907}
   - component: {fileID: -7930196664381708198}
   - component: {fileID: 2191723226855456630}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Fygar
   m_TagString: Enemy
   m_Icon: {fileID: 0}
@@ -156,6 +156,9 @@ MonoBehaviour:
   ghostSprite: {fileID: 21300000, guid: 8feb8825107627d4e98172e0433ded5a, type: 3}
   deathSprite: {fileID: 0}
   maxWanderDuration: 5
+  maxInflateStage: 4
+  deflateDelay: 1.5
+  inflateSprites: []
   firePrefab: {fileID: 7313938338418756585, guid: cef3e68746564b6469bc3fc9f5532f89, type: 3}
   fireRange: 5
   fireDelay: 0.5

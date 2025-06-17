@@ -43,6 +43,13 @@ public class EnemyController : MonoBehaviour
     protected bool isWanderingMoving = false;
     protected Vector3 wanderTarget;
 
+    protected int inflateStage = 0;
+    [SerializeField] protected int maxInflateStage = 4;
+    [SerializeField] protected float deflateDelay = 1.5f;
+    [SerializeField] protected Sprite[] inflateSprites; // assign in inspector: stage 0 to 3
+    protected Coroutine deflateRoutine;
+    protected bool isInflating = false;
+
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -57,7 +64,8 @@ public class EnemyController : MonoBehaviour
 
     protected virtual void Update()
     {
-        if (GameManager.Instance.isGameOver || isDead) return;
+        if (GameManager.Instance.isGameOver || isDead || isInflating)
+            return;
 
         // Execute behavior based on state
         switch (currentState)
@@ -166,6 +174,43 @@ public class EnemyController : MonoBehaviour
                 }
             }
         }
+    }
+
+    public void Inflate()
+    {
+        if (isDead || isGhost) return;
+
+        isInflating = true; // Stop movement and attacks
+
+        Debug.Log($" {name} inflated to stage {inflateStage} / {maxInflateStage}");
+
+        inflateStage++;
+
+        if (inflateSprites != null && inflateStage - 1 < inflateSprites.Length)
+            sr.sprite = inflateSprites[inflateStage - 1];
+
+        if (inflateStage >= maxInflateStage)
+        {
+            CrushMe();
+        }
+        else
+        {
+            if (deflateRoutine != null)
+                StopCoroutine(deflateRoutine);
+
+            deflateRoutine = StartCoroutine(DeflateOverTime());
+        }
+    }
+
+    IEnumerator DeflateOverTime()
+    {
+        yield return new WaitForSeconds(deflateDelay);
+
+        Debug.Log($"{name} deflated back to stage 0");
+
+        inflateStage = 0;
+        sr.sprite = normalSprite;
+        isInflating = false;
     }
 
     // Attempts to find a tunnel-based path to the player

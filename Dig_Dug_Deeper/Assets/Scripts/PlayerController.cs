@@ -11,6 +11,9 @@ public class PlayerController : MonoBehaviour
     private Vector3 targetPos; // Destination position
     public Sprite deathSprite; // Sprite to show on death
     [SerializeField] private float deathDelay = 0.5f;
+    private Vector2 lastMoveDir = Vector2.right;
+    [SerializeField] private GameObject pumpPrefab;
+    [SerializeField] private float pumpDistance = 2f;
 
     void Update()
     {
@@ -18,6 +21,11 @@ public class PlayerController : MonoBehaviour
         if (isMoving) return;
 
         input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+
+        if (input != Vector2.zero)
+        {
+            lastMoveDir = input.normalized;  // ✅ MOVE HERE
+        }
 
         // Only allow one axis at a time
         if (Mathf.Abs(input.x) > 0.1f) input.y = 0;
@@ -47,6 +55,11 @@ public class PlayerController : MonoBehaviour
             DestroyDirtAt(nextPos);
 
             StartCoroutine(MoveTo(nextPos));
+        }
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            TryPumpEnemy();
         }
     }
 
@@ -105,6 +118,23 @@ public class PlayerController : MonoBehaviour
 
         // Start delayed Game Over sequence
         StartCoroutine(HandleDeath());
+    }
+
+    void TryPumpEnemy()
+    {
+        Vector3 spawnPos = transform.position + (Vector3)(lastMoveDir * pumpDistance);
+
+        GameObject pump = Instantiate(pumpPrefab, spawnPos, Quaternion.identity);
+
+        // Optional: rotate the pump sprite based on direction
+        if (lastMoveDir == Vector2.left)
+            pump.transform.rotation = Quaternion.Euler(0, 0, 180);
+        else if (lastMoveDir == Vector2.right)
+            pump.transform.rotation = Quaternion.Euler(0, 0, 0);
+        else if (lastMoveDir == Vector2.up)
+            pump.transform.rotation = Quaternion.Euler(0, 0, 90);
+        else if (lastMoveDir == Vector2.down)
+            pump.transform.rotation = Quaternion.Euler(0, 0, -90);
     }
 
     private IEnumerator HandleDeath()

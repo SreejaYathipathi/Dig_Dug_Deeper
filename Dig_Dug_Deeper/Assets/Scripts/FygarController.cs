@@ -48,10 +48,13 @@ public class FygarController : EnemyController
         if (currentState == EnemyState.Ghost || currentState == EnemyState.Returning)
             return false;
 
+        // ⛔️ NEW: Block fire if being inflated
+        if (inflateStage > 0)
+            return false;
+
         Vector2Int fygarPos = Vector2Int.RoundToInt(transform.position);
         Vector2Int playerPos = Vector2Int.RoundToInt(player.position);
 
-        // Must be in same row
         if (fygarPos.y != playerPos.y)
             return false;
 
@@ -60,7 +63,6 @@ public class FygarController : EnemyController
 
         int distanceToPlayer = Mathf.Abs(playerPos.x - fygarPos.x);
 
-        // Prevent firing if too close
         if (distanceToPlayer <= 1)
             return false;
 

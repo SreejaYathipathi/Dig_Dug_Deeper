@@ -15,6 +15,7 @@ public class FygarController : EnemyController
     private float fireTimer;
     private List<GameObject> activeFire = new List<GameObject>();
 
+
     private void Update()
     {
         base.Update();
@@ -48,7 +49,6 @@ public class FygarController : EnemyController
         if (currentState == EnemyState.Ghost || currentState == EnemyState.Returning)
             return false;
 
-        // ⛔️ NEW: Block fire if being inflated
         if (inflateStage > 0)
             return false;
 

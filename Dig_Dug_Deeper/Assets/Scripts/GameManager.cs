@@ -1,13 +1,14 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    // Singleton instance accessible from anywhere
     public static GameManager Instance { get; private set; }
 
     public bool isGameOver = false;
+
+    // Add this list to track enemies
+    private readonly List<EnemyController> _activeEnemies = new();
 
     private void Awake()
     {
@@ -17,28 +18,45 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
     }
 
+    /// <summary>
+    /// Registers a new enemy to the manager.
+    /// </summary>
+    public void RegisterEnemy(EnemyController enemy)
+    {
+        if (!_activeEnemies.Contains(enemy))
+            _activeEnemies.Add(enemy);
+    }
+
+    /// <summary>
+    /// Unregisters a dead or destroyed enemy.
+    /// </summary>
+    public void UnregisterEnemy(EnemyController enemy)
+    {
+        _activeEnemies.Remove(enemy);
+    }
+
+    /// <summary>
+    /// Checks if all enemies in the current level are cleared.
+    /// </summary>
     public bool AreAllEnemiesCleared()
     {
         int top = LevelManager.Instance.GetTopRowOfCurrentLevel();
         int bottom = LevelManager.Instance.GetBottomRowOfCurrentLevel();
 
-        EnemyController[] enemies = FindObjectsOfType<EnemyController>();
-
-        foreach (EnemyController enemy in enemies)
+        foreach (EnemyController enemy in _activeEnemies)
         {
             if (enemy.IsDead) continue;
 
             int enemyY = Mathf.RoundToInt(enemy.transform.position.y);
             if (enemyY >= top && enemyY <= bottom)
             {
-                return false; // enemy alive and inside current level zone
+                return false;
             }
         }
 
         return true;
     }
 
-    // Call this to mark the game as over
     public void GameOver()
     {
         if (isGameOver) return;

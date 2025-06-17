@@ -164,7 +164,7 @@ public class GridManager : MonoBehaviour
         float camX = (gridWidth * tileUnitSize) / 2f - tileUnitSize / 2f;
 
         // Shift Y to the topmost level
-        int totalLevels = 3; // update if dynamic
+        //int totalLevels = 3; // update if dynamic
         float camY = (gridHeight * tileUnitSize) - (targetHeight / 2f) - (tileUnitSize / 2f);
 
         mainCam.transform.position = new Vector3(camX, camY, -10);

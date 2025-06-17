@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 2137723045379090263}
   - component: {fileID: 8799401110784838541}
   - component: {fileID: 3233272418561046769}
+  - component: {fileID: 7530627360206876211}
   m_Layer: 0
   m_Name: FirePrefab
   m_TagString: Untagged
@@ -29,7 +30,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 1.02, y: 3.27, z: 764.94354}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.5, y: 0.8, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -122,7 +123,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.0071040094, y: 0}
+  m_Offset: {x: -0.107570976, y: 0}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -132,7 +133,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1.0773201, y: 0.98}
+  m_Size: {x: 1.5172024, y: 0.98}
   m_EdgeRadius: 0
 --- !u!114 &3233272418561046769
 MonoBehaviour:
@@ -146,3 +147,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 829597d1a9c05bb4491a601a11cbea05, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!95 &7530627360206876211
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7313938338418756585}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: ed06536c537b1d74f8e78de7dccf9b55, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0

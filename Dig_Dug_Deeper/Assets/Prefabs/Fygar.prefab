@@ -84,7 +84,7 @@ SpriteRenderer:
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 1.3, y: 1.41}
+  m_Size: {x: 0.875, y: 0.875}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -129,7 +129,7 @@ BoxCollider2D:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
     oldSize: {x: 0.875, y: 0.875}
-    newSize: {x: 1.3, y: 1.41}
+    newSize: {x: 0.875, y: 0.875}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
     adaptiveTiling: 0
@@ -168,7 +168,6 @@ MonoBehaviour:
   animator: {fileID: 8300509917500281667}
   firePrefab: {fileID: 7313938338418756585, guid: cef3e68746564b6469bc3fc9f5532f89, type: 3}
   fireRange: 5
-  fireDelay: 0.5
   fireDuration: 0.5
   fireCheckInterval: 2
 --- !u!95 &8300509917500281667

@@ -100,7 +100,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b37092f9b88f3c4582be6818a7a8f42, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  checkDelay: 0.3
+  checkDelay: 0.5
   fallSpeed: 2
   shatteredSprite: {fileID: 21300000, guid: fcf4c6abb157bca438067e0806661348, type: 3}
   shortFallDestroyDelay: 1

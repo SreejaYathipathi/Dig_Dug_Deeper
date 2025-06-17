@@ -1,4 +1,4 @@
-﻿// LevelTransitionManager.cs
+﻿using System.Collections;
 using UnityEngine;
 
 public class LevelTransitionManager : MonoBehaviour
@@ -10,6 +10,11 @@ public class LevelTransitionManager : MonoBehaviour
     public float enemyWanderEndTime;
 
     private Camera _mainCamera;
+
+    [SerializeField]
+    private float cameraLerpDuration = 3f; 
+
+    private Coroutine _cameraMoveRoutine;
 
     private void Awake()
     {
@@ -90,12 +95,38 @@ public class LevelTransitionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Move the main camera down by one level height.
+    /// Move the main camera down by one level height, smoothly over duration.
     /// </summary>
     private void MoveCameraDown()
     {
-        Vector3 camPos = _mainCamera.transform.position;
-        camPos.y -= LevelManager.Instance.levelHeight;
-        _mainCamera.transform.position = camPos;
+        // If a previous move is still running, stop it
+        if (_cameraMoveRoutine != null)
+            StopCoroutine(_cameraMoveRoutine);
+
+        // Start smooth move coroutine
+        _cameraMoveRoutine = StartCoroutine(LerpCameraDown());
+    }
+
+    /// <summary>
+    /// Coroutine: Lerps camera Y position down by one levelHeight over cameraLerpDuration seconds.
+    /// </summary>
+    private IEnumerator LerpCameraDown()
+    {
+        Vector3 startPos = _mainCamera.transform.position;
+        Vector3 endPos = startPos;
+        endPos.y -= LevelManager.Instance.levelHeight;
+
+        float elapsed = 0f;
+        while (elapsed < cameraLerpDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / cameraLerpDuration);
+            _mainCamera.transform.position = Vector3.Lerp(startPos, endPos, t);
+            yield return null;
+        }
+
+        // Ensure final position is exact
+        _mainCamera.transform.position = endPos;
+        _cameraMoveRoutine = null;
     }
 }

@@ -148,6 +148,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   currentState: 0
+  scoreValue: 400
   moveSpeed: 2
   ghostSpeed: 1
   playerCheckInterval: 2

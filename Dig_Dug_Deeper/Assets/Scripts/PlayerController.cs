@@ -24,7 +24,7 @@ public class PlayerController : MonoBehaviour
 
         if (input != Vector2.zero)
         {
-            lastMoveDir = input.normalized;  // ✅ MOVE HERE
+            lastMoveDir = input.normalized;
         }
 
         // Only allow one axis at a time
@@ -32,28 +32,59 @@ public class PlayerController : MonoBehaviour
 
         if (input != Vector2.zero)
         {
+
+            int rawLevel = LevelManager.Instance.GetPlayerLevelByY(transform.position.y);
+            int flippedLevel = (LevelManager.Instance.totalLevels - 1) - rawLevel;
+            LevelManager.Instance.currentLevel = flippedLevel;
+
             Vector3 nextPos = transform.position + new Vector3(input.x, input.y, 0);
 
             // Bounds check
             if (!GridManager.Instance.IsWithinBounds(nextPos))
                 return;
 
-            // Check only for obstacles (Rock, Indestructible)
+            // Obstacle check
             Collider2D hit = Physics2D.OverlapPoint(nextPos);
-
-            if (hit != null)
+            if (hit != null && hit.gameObject.layer == LayerMask.NameToLayer("Obstacle"))
             {
-                Debug.Log($"Hit {hit.gameObject.name} on layer {LayerMask.LayerToName(hit.gameObject.layer)}");
+                Debug.Log("Blocked by obstacle.");
+                return;
+            }
 
-                if (hit.gameObject.layer == LayerMask.NameToLayer("Obstacle"))
+            // Camera bounds check
+            bool movingDown = input.y < 0;
+            int currentY = Mathf.RoundToInt(transform.position.y);
+
+            //Determine which level the player is in based on position
+            LevelManager.Instance.currentLevel = LevelManager.Instance.GetPlayerLevelByY(transform.position.y);
+            int bottomRow = LevelManager.Instance.GetBottomRowOfCurrentLevel();
+
+            // Debug Log – Check if player is at last line
+            Debug.Log($"[PLAYER] Y: {currentY}, BottomRow of Level {LevelManager.Instance.currentLevel}: {bottomRow}");
+
+            if (!IsInsideCameraBounds(nextPos))
+            {
+                if (!(movingDown && currentY == bottomRow && CanMoveDownToNextLevel(nextPos)))
                 {
-                    Debug.Log("Blocked by obstacle.");
+                    Debug.Log("Blocked: out of camera bounds.");
                     return;
                 }
             }
 
-            DestroyDirtAt(nextPos);
+            // Transition if allowed
+            if (movingDown && currentY == bottomRow && CanMoveDownToNextLevel(nextPos))
+            {
+                Debug.Log("Transitioning to next level!");
+                LevelManager.Instance.currentLevel++;
+                MoveCameraToNextLevel();
+            }
+            else if (movingDown && currentY == bottomRow && !GameManager.Instance.AreAllEnemiesCleared())
+            {
+                Debug.Log("Enemies not cleared yet.");
+                return;
+            }
 
+            DestroyDirtAt(nextPos);
             StartCoroutine(MoveTo(nextPos));
         }
 
@@ -108,16 +139,32 @@ public class PlayerController : MonoBehaviour
         isMoving = false;
     }
 
-    // Called when the player is crushed by a rock
-    public void CrushMe()
+    private bool IsInsideCameraBounds(Vector3 worldPos)
     {
-        GetComponent<SpriteRenderer>().sprite = deathSprite;
+        Camera cam = Camera.main;
+        Vector3 min = cam.ViewportToWorldPoint(new Vector3(0, 0, 0));
+        Vector3 max = cam.ViewportToWorldPoint(new Vector3(1, 1, 0));
 
-        // Disable movement immediately
-        enabled = false;
+        return worldPos.x >= min.x && worldPos.x <= max.x &&
+               worldPos.y >= min.y && worldPos.y <= max.y;
+    }
 
-        // Start delayed Game Over sequence
-        StartCoroutine(HandleDeath());
+    private bool CanMoveDownToNextLevel(Vector3 targetPos)
+    {
+        int targetY = Mathf.RoundToInt(targetPos.y);
+        int bottomRow = LevelManager.Instance.GetBottomRowOfCurrentLevel();
+
+        // Only allow digging down from the last row and only if all enemies are dead
+        return (targetY < bottomRow) && GameManager.Instance.AreAllEnemiesCleared();
+    }
+
+    private void MoveCameraToNextLevel()
+    {
+        LevelManager.Instance.currentLevel++;
+
+        Vector3 camPos = Camera.main.transform.position;
+        camPos.y -= LevelManager.Instance.levelHeight;
+        Camera.main.transform.position = camPos;
     }
 
     void TryPumpEnemy()
@@ -137,6 +184,18 @@ public class PlayerController : MonoBehaviour
             pump.transform.rotation = Quaternion.Euler(0, 0, -90);
     }
 
+    // Called when the player is crushed by a rock
+    public void CrushMe()
+    {
+        GetComponent<SpriteRenderer>().sprite = deathSprite;
+
+        // Disable movement immediately
+        enabled = false;
+
+        // Start delayed Game Over sequence
+        StartCoroutine(HandleDeath());
+    }
+
     private IEnumerator HandleDeath()
     {
         yield return new WaitForSeconds(deathDelay); // wait to show death sprite
@@ -147,13 +206,6 @@ public class PlayerController : MonoBehaviour
 
         yield return new WaitForSeconds(0.3f); // optional: hold longer before removing
 
-        Destroy(gameObject);
-    }
-
-    // Delay before actually destroying the player object
-    IEnumerator DestroySelf()
-    {
-        yield return new WaitForSeconds(0.3f);
         Destroy(gameObject);
     }
 

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class GridManager : MonoBehaviour
@@ -28,54 +29,78 @@ public class GridManager : MonoBehaviour
 
     void Start()
     {
-        SetDirtForCurrentLevel(); // Set appropriate dirt tile based on level
         LoadLevelFromFile();      // Load and build level grid from file
     }
 
     void LoadLevelFromFile()
     {
-        // Clear existing grid tiles
+
         foreach (Transform child in transform)
-        {
             Destroy(child.gameObject);
-        }
 
-        // Load level text data
-        TextAsset levelData = Resources.Load<TextAsset>(levelFileName);
-        if (levelData == null)
+        List<string> combinedLines = new List<string>();
+        List<GameObject> dirtByLine = new List<GameObject>(); // To track which dirt to use per line
+
+        int totalLevels = 3;
+        LevelManager.Instance.totalLevels = totalLevels;
+
+        for (int i = 1; i <= totalLevels; i++)
         {
-            Debug.LogError("Level file not found at Resources/" + levelFileName);
-            return;
+            string path = $"Levels/Level_{i}";
+            TextAsset data = Resources.Load<TextAsset>(path);
+            if (data == null) continue;
+
+            string[] lines = data.text.Split('\n');
+
+            // Get the correct dirt prefab for this level file
+            GameObject dirtForThisLevel = GetDirtForLevelFile(path);
+
+            foreach (string line in lines)
+            {
+                if (!string.IsNullOrWhiteSpace(line))
+                {
+                    combinedLines.Add(line.TrimEnd());
+                    dirtByLine.Add(dirtForThisLevel); // Add dirt reference per line
+                }
+            }
         }
 
-        // Parse level lines
-        string[] lines = levelData.text.Split('\n');
+        BuildGridFromLines(combinedLines.ToArray(), dirtByLine.ToArray());
+
+    }
+
+    void BuildGridFromLines(string[] lines, GameObject[] dirtPrefabsByLine)
+    {
         int height = lines.Length;
         int width = 0;
         foreach (string line in lines)
             width = Mathf.Max(width, line.Trim().Length);
 
-        Vector3 bottomLeftOffset = new Vector3(0, 0, 0); // you can also add padding here if needed
+        gridHeight = height;
+        gridWidth = width;
 
-        // Spawn tiles based on characters in level file
+        Vector3 bottomLeftOffset = new Vector3(0, 0, 0);
+
         for (int y = 0; y < height; y++)
         {
             string line = lines[y].Trim();
+            GameObject thisLineDirt = dirtPrefabsByLine[y]; // Use correct dirt
+
             for (int x = 0; x < line.Length; x++)
             {
-
                 char tileChar = line[x];
-
                 float spawnX = x * tileUnitSize;
                 float spawnY = (height - 1 - y) * tileUnitSize;
                 Vector3 spawnPos = new Vector3(spawnX, spawnY, 0) + bottomLeftOffset;
 
-                // Always spawn dirt first (for visuals), unless it's already tunnel or rock
                 if (tileChar == 'K' || tileChar == 'F' || tileChar == 'P')
                 {
-                    // If it's an enemy or player, spawn a tunnel first so they're standing in one
-                    Instantiate(tunnelPrefab, spawnPos, Quaternion.identity, transform); // Always put tunnel under characters
+                    Instantiate(tunnelPrefab, spawnPos, Quaternion.identity, transform);
                     Instantiate(GetPrefabForChar(tileChar), spawnPos, Quaternion.identity, transform);
+                }
+                else if (tileChar == 'D')
+                {
+                    Instantiate(thisLineDirt, spawnPos, Quaternion.identity, transform);
                 }
                 else
                 {
@@ -86,12 +111,20 @@ public class GridManager : MonoBehaviour
             }
         }
 
-        // Store grid dimensions for bounds checking and camera positioning
-        gridWidth = width;
-        gridHeight = height;
+        CenterCameraOnGrid();
+    }
 
-        CenterCameraOnGrid(); // Center the camera after grid is created
+    GameObject GetDirtForLevelFile(string levelFilePath)
+    {
+        if (levelFilePath.Contains("Level_1"))
+            return dirtVariants[0];
+        else if (levelFilePath.Contains("Level_2"))
+            return dirtVariants[1];
+        else if (levelFilePath.Contains("Level_3"))
+            return dirtVariants[2];
 
+        Debug.LogWarning("No matching dirt prefab found for: " + levelFilePath);
+        return dirtVariants[0]; // fallback
     }
 
     // Returns true if a position is within the grid dimensions
@@ -102,25 +135,12 @@ public class GridManager : MonoBehaviour
         return x >= 0 && x < gridWidth && y >= 0 && y < gridHeight;
     }
 
-    // Chooses correct dirt prefab based on level filename
-    void SetDirtForCurrentLevel()
-    {
-        if (levelFileName.Contains("Level_1"))
-            _dirtPrefab = dirtVariants[0];
-        else if (levelFileName.Contains("Level_2"))
-            _dirtPrefab = dirtVariants[1];
-        else if (levelFileName.Contains("Level_3"))
-            _dirtPrefab = dirtVariants[2];
-        else
-            Debug.LogWarning("No matching dirt prefab found for: " + levelFileName);
-    }
-
     // Returns the corresponding prefab for each level character symbol
     GameObject GetPrefabForChar(char c)
     {
         return c switch
         {
-            'D' => _dirtPrefab,
+            //'D' => _dirtPrefab,
             'T' => tunnelPrefab,
             'R' => rockPrefab,
             'P' => playerPrefab,
@@ -136,16 +156,18 @@ public class GridManager : MonoBehaviour
         Camera mainCam = Camera.main;
         if (mainCam == null) return;
 
-        float camX = (gridWidth * tileUnitSize) / 2f - tileUnitSize / 2f;
-        float camY = (gridHeight * tileUnitSize) / 2f - tileUnitSize / 2f;
-
-        mainCam.transform.position = new Vector3(camX, camY, -10);
-
-        // Adjust orthographic size to fit height (or width depending on aspect ratio)
         float screenAspect = (float)Screen.width / Screen.height;
         float targetWidth = gridWidth * tileUnitSize;
-        float targetHeight = gridHeight * tileUnitSize;
+        float targetHeight = LevelManager.Instance.levelHeight * tileUnitSize;
 
+        // Center X stays the same
+        float camX = (gridWidth * tileUnitSize) / 2f - tileUnitSize / 2f;
+
+        // Shift Y to the topmost level
+        int totalLevels = 3; // update if dynamic
+        float camY = (gridHeight * tileUnitSize) - (targetHeight / 2f) - (tileUnitSize / 2f);
+
+        mainCam.transform.position = new Vector3(camX, camY, -10);
         mainCam.orthographicSize = Mathf.Max(targetHeight / 2f, (targetWidth / screenAspect) / 2f);
     }
 

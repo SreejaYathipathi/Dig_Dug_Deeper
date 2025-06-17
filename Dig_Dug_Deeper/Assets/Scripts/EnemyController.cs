@@ -7,6 +7,7 @@ public class EnemyController : MonoBehaviour
     // Enum for enemy AI states
     public enum EnemyState { Wandering, Chasing, Ghost, Returning, FireBreath }
     public EnemyState currentState = EnemyState.Wandering;
+    [SerializeField] private int scoreValue = 200;
 
     // Movement and behavior settings
     public float moveSpeed = 2f;
@@ -28,6 +29,7 @@ public class EnemyController : MonoBehaviour
     protected bool isGhost = false;
     protected Coroutine pathCheckRoutine;
     protected bool isDead = false;
+    public bool IsDead => isDead;
 
     // Ghosting and pathfinding
     protected float timeSinceLastPathFail = 0f;
@@ -64,6 +66,8 @@ public class EnemyController : MonoBehaviour
 
     protected virtual void Update()
     {
+        if (!IsEnemyVisibleToCamera()) return;
+
         if (GameManager.Instance.isGameOver || isDead || isInflating)
             return;
 
@@ -378,6 +382,14 @@ public class EnemyController : MonoBehaviour
         }
     }
 
+    private bool IsEnemyVisibleToCamera()
+    {
+        Vector3 viewportPos = Camera.main.WorldToViewportPoint(transform.position);
+        return viewportPos.x >= 0 && viewportPos.x <= 1f &&
+               viewportPos.y >= 0 && viewportPos.y <= 1f &&
+               viewportPos.z >= 0;
+    }
+
     // Checks for adjacent tunnel tiles
     bool IsTunnelNearby()
     {
@@ -447,6 +459,9 @@ public class EnemyController : MonoBehaviour
         isDead = true;
 
         GetComponent<SpriteRenderer>().sprite = deathSprite;
+
+        ScoreManager.Instance?.AddScore(scoreValue);
+
         StartCoroutine(DestroySelf());
     }
 

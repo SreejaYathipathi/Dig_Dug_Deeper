@@ -17,6 +17,27 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
     }
 
+    public bool AreAllEnemiesCleared()
+    {
+        int top = LevelManager.Instance.GetTopRowOfCurrentLevel();
+        int bottom = LevelManager.Instance.GetBottomRowOfCurrentLevel();
+
+        EnemyController[] enemies = FindObjectsOfType<EnemyController>();
+
+        foreach (EnemyController enemy in enemies)
+        {
+            if (enemy.IsDead) continue;
+
+            int enemyY = Mathf.RoundToInt(enemy.transform.position.y);
+            if (enemyY >= top && enemyY <= bottom)
+            {
+                return false; // enemy alive and inside current level zone
+            }
+        }
+
+        return true;
+    }
+
     // Call this to mark the game as over
     public void GameOver()
     {

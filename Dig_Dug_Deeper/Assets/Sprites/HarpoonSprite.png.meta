@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 6062a5df2c2b0f445ab2c0931a45b806
+guid: 21a0656cea3ee0949bcde6bca0d9a204
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 3573036208370857778
-    second: download_0
+      213: 883016587840618505
+    second: HarpoonSprite_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -51,7 +51,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 200
+  spritePixelsToUnits: 16
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: download_0
+      name: HarpoonSprite_0
       rect:
         serializedVersion: 2
         x: 0
-        y: 0
-        width: 255
-        height: 198
+        y: 5
+        width: 32
+        height: 7
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -127,8 +127,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 237bd813089f59130800000000000000
-      internalID: 3573036208370857778
+      spriteID: 900840188ea114c00800000000000000
+      internalID: 883016587840618505
       vertices: []
       indices: 
       edges: []
@@ -144,7 +144,7 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      download_0: 3573036208370857778
+      HarpoonSprite_0: 883016587840618505
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

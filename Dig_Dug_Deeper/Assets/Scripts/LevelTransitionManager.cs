@@ -1,61 +1,71 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using UnityEngine;
 
+/// <summary>
+/// Handles smooth camera transitions between levels,
+/// enforces a “wander-only” delay for enemies,
+/// and provides a check for blocked transitions by uncleared enemies.
+/// </summary>
 public class LevelTransitionManager : MonoBehaviour
 {
     public static LevelTransitionManager Instance;
 
-    [SerializeField] private float enemyWanderDelay = 3f;
-    // time until enemies resume normal AI (Time.time + delay)
-    public float enemyWanderEndTime;
-
-    private Camera _mainCamera;
-
+    [Header("Enemy Wander Delay")]
     [SerializeField]
-    private float cameraLerpDuration = 3f; 
+    private float enemyWanderDelay = 3f;   // Seconds enemies remain wandering after a level change
+    public float enemyWanderEndTime;       // Time.time + enemyWanderDelay
 
-    private Coroutine _cameraMoveRoutine;
+    [Header("Camera Movement")]
+    [SerializeField]
+    private float cameraLerpDuration = 3f; // Seconds for smooth camera slide
+
+    private Camera mainCamera;
+    private Coroutine cameraMoveRoutine;
 
     private void Awake()
     {
+        // Singleton setup
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
 
-        _mainCamera = Camera.main;
+        mainCamera = Camera.main;
     }
 
     private void Start()
     {
-        UpdateEnemiesForCurrentLevel();
-        // start delay when game begins
+        // Start the initial wander-only window
         enemyWanderEndTime = Time.time + enemyWanderDelay;
     }
 
     /// <summary>
-    /// Try to move down one level when player steps across boundary.
-    /// Returns true if transition occurred.
+    /// Attempts to move the player down one level.
+    /// Returns true if a transition actually occurred.
     /// </summary>
     public bool TryTransitionDown(Vector3 playerPos, Vector2 input)
     {
-        if (input.y >= 0)
+        // Only handle downward input
+        if (input.y >= 0f)
             return false;
 
-        int newLevel = LevelManager.Instance.GetPlayerLevelByY(playerPos.y);
-        LevelManager.Instance.currentLevel = newLevel;
+        int playerRow = Mathf.RoundToInt(playerPos.y);
+        int boundaryRow = LevelManager.Instance.GetTopRowOfCurrentLevel();
+        bool allCleared = GameManager.Instance.AreAllEnemiesCleared();
 
-        int currentY = Mathf.RoundToInt(playerPos.y);
-        int boundary = LevelManager.Instance.GetTopRowOfCurrentLevel();
-        bool cleared = GameManager.Instance.AreAllEnemiesCleared();
-
-        if (currentY == boundary && cleared)
+        // Only transition if at the boundary and all enemies are cleared
+        if (playerRow == boundaryRow && allCleared)
         {
-            LevelManager.Instance.currentLevel++;
-            MoveCameraDown();
+            // Increment level index, clamped
+            LevelManager.Instance.currentLevel = Mathf.Min(
+                LevelManager.Instance.currentLevel + 1,
+                LevelManager.Instance.totalLevels - 1
+            );
 
-            UpdateEnemiesForCurrentLevel();
-            // trigger 3-second wander-only delay
+            // Smoothly move the camera down
+            MoveCamera(Vector3.down * LevelManager.Instance.levelHeight);
+
+            // Restart wander-only timer
             enemyWanderEndTime = Time.time + enemyWanderDelay;
-
             return true;
         }
 
@@ -63,70 +73,87 @@ public class LevelTransitionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Check if transition is blocked by uncleared enemies.
+    /// Attempts to move the player up one level.
+    /// Returns true if a transition actually occurred.
+    /// </summary>
+    public bool TryTransitionUp(Vector3 playerPos, Vector2 input)
+    {
+        // Only handle upward input
+        if (input.y <= 0f)
+            return false;
+
+        int playerRow = Mathf.RoundToInt(playerPos.y);
+        int boundaryRow = LevelManager.Instance.GetBottomRowOfCurrentLevel();
+        bool allCleared = GameManager.Instance.AreAllEnemiesCleared();
+
+        // Only transition if at the boundary and all enemies are cleared
+        if (playerRow == boundaryRow && allCleared)
+        {
+            // Decrement level index, clamped
+            LevelManager.Instance.currentLevel = Mathf.Max(
+                LevelManager.Instance.currentLevel - 1,
+                0
+            );
+
+            // Smoothly move the camera up
+            MoveCamera(Vector3.up * LevelManager.Instance.levelHeight);
+
+            // Restart wander-only timer
+            enemyWanderEndTime = Time.time + enemyWanderDelay;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Returns true if the player is at a boundary row but cannot transition
+    /// because not all enemies have been cleared yet.
     /// </summary>
     public bool IsBlockedByEnemies(Vector3 playerPos, Vector2 input)
     {
-        if (input.y >= 0)
+        // Only consider downward attempts
+        if (input.y >= 0f)
             return false;
 
-        int currentY = Mathf.RoundToInt(playerPos.y);
-        int boundary = LevelManager.Instance.GetTopRowOfCurrentLevel();
-        bool cleared = GameManager.Instance.AreAllEnemiesCleared();
+        int playerRow = Mathf.RoundToInt(playerPos.y);
+        int boundaryRow = LevelManager.Instance.GetTopRowOfCurrentLevel();
+        bool allCleared = GameManager.Instance.AreAllEnemiesCleared();
 
-        return (currentY == boundary && !cleared);
+        // Blocked if at boundary and some enemies remain
+        return (playerRow == boundaryRow && !allCleared);
     }
 
     /// <summary>
-    /// Disable all enemies not in the current level.
+    /// Initiates a smooth camera movement by the given delta.
     /// </summary>
-    private void UpdateEnemiesForCurrentLevel()
+    private void MoveCamera(Vector3 delta)
     {
-        EnemyController[] allEnemies = Object.FindObjectsByType<EnemyController>(
-            FindObjectsSortMode.None
-        );
-        int level = LevelManager.Instance.currentLevel;
+        if (cameraMoveRoutine != null)
+            StopCoroutine(cameraMoveRoutine);
 
-        foreach (var enemy in allEnemies)
-        {
-            int enemyLevel = LevelManager.Instance.GetPlayerLevelByY(enemy.transform.position.y);
-            enemy.gameObject.SetActive(enemyLevel == level);
-        }
+        cameraMoveRoutine = StartCoroutine(LerpCamera(delta));
     }
 
     /// <summary>
-    /// Move the main camera down by one level height, smoothly over duration.
+    /// Coroutine that linearly interpolates the camera over cameraLerpDuration seconds.
     /// </summary>
-    private void MoveCameraDown()
+    private IEnumerator LerpCamera(Vector3 delta)
     {
-        // If a previous move is still running, stop it
-        if (_cameraMoveRoutine != null)
-            StopCoroutine(_cameraMoveRoutine);
-
-        // Start smooth move coroutine
-        _cameraMoveRoutine = StartCoroutine(LerpCameraDown());
-    }
-
-    /// <summary>
-    /// Coroutine: Lerps camera Y position down by one levelHeight over cameraLerpDuration seconds.
-    /// </summary>
-    private IEnumerator LerpCameraDown()
-    {
-        Vector3 startPos = _mainCamera.transform.position;
-        Vector3 endPos = startPos;
-        endPos.y -= LevelManager.Instance.levelHeight;
+        Vector3 startPos = mainCamera.transform.position;
+        Vector3 endPos = startPos + delta;
 
         float elapsed = 0f;
         while (elapsed < cameraLerpDuration)
         {
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / cameraLerpDuration);
-            _mainCamera.transform.position = Vector3.Lerp(startPos, endPos, t);
+            mainCamera.transform.position = Vector3.Lerp(startPos, endPos, t);
             yield return null;
         }
 
-        // Ensure final position is exact
-        _mainCamera.transform.position = endPos;
-        _cameraMoveRoutine = null;
+        // Snap to the exact final position
+        mainCamera.transform.position = endPos;
+        cameraMoveRoutine = null;
     }
 }

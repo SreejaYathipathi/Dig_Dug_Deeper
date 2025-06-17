@@ -66,6 +66,20 @@ public class EnemyController : MonoBehaviour
 
     protected virtual void Update()
     {
+
+        // Determine which level this enemy currently occupies
+        int enemyLevel = LevelManager.Instance.GetPlayerLevelByY(transform.position.y);
+        // If enemy's level != player's current level, suspend all behavior
+        if (enemyLevel != LevelManager.Instance.currentLevel)
+            return;
+
+        // enforce wandering state during delay period
+        if (Time.time < LevelTransitionManager.Instance.enemyWanderEndTime)
+        {
+            currentState = EnemyState.Wandering;
+            return;
+        }
+
         if (!IsEnemyVisibleToCamera()) return;
 
         if (GameManager.Instance.isGameOver || isDead || isInflating)

@@ -17,11 +17,17 @@ public class PlayerController : MonoBehaviour
     [Header("Animation")]
     [SerializeField] private Animator _animator;     // Animator component reference
 
+    void Awake()
+    {
+        // Warn if Animator not assigned
+        if (_animator == null)
+            Debug.LogWarning("PlayerController: Animator is not assigned.");
+    }
+
     void Start()
     {
         // Initialize player's current level
         LevelManager.Instance.currentLevel = LevelManager.Instance.GetPlayerLevelByY(transform.position.y);
-        // No explicit Idle trigger needed; default Animator state handles idle.
     }
 
     void Update()
@@ -29,7 +35,7 @@ public class PlayerController : MonoBehaviour
         if (GameManager.Instance.isGameOver || isMoving)
             return;
 
-        // Read input
+        // Read input and normalize
         input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
         if (input != Vector2.zero)
             lastMoveDir = input.normalized;
@@ -40,6 +46,16 @@ public class PlayerController : MonoBehaviour
 
         if (input != Vector2.zero)
         {
+            // Rotate sprite based on input direction
+            if (input.x > 0)
+                transform.rotation = Quaternion.Euler(0f, 0f, 0f);
+            else if (input.x < 0)
+                transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+            else if (input.y > 0)
+                transform.rotation = Quaternion.Euler(0f, 0f, 90f);
+            else if (input.y < 0)
+                transform.rotation = Quaternion.Euler(0f, 0f, -90f);
+
             Vector3 nextPos = transform.position + (Vector3)input;
 
             // Bounds check
@@ -78,14 +94,24 @@ public class PlayerController : MonoBehaviour
         if (_animator != null)
             _animator.SetTrigger("Pump");
 
-        // Spawn pump effect
+        // Spawn pump effect in facing direction
         Vector3 spawnPos = transform.position + (Vector3)(lastMoveDir * pumpDistance);
-        Instantiate(pumpPrefab, spawnPos, Quaternion.identity);
+        GameObject pump = Instantiate(pumpPrefab, spawnPos, Quaternion.identity);
+
+        // Rotate pump effect to match lastMoveDir
+        if (lastMoveDir.x > 0)
+            pump.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
+        else if (lastMoveDir.x < 0)
+            pump.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+        else if (lastMoveDir.y > 0)
+            pump.transform.rotation = Quaternion.Euler(0f, 0f, 90f);
+        else if (lastMoveDir.y < 0)
+            pump.transform.rotation = Quaternion.Euler(0f, 0f, -90f);
     }
 
     public void CrushMe()
     {
-        // Trigger die animation
+        // Trigger die animation via Any State transition
         if (_animator != null)
             _animator.SetTrigger("Die");
 
@@ -120,7 +146,7 @@ public class PlayerController : MonoBehaviour
         // Perform game over sequence
         ScoreManager.Instance.EvaluateHighScore();
         GameManager.Instance.GameOver();
-        FindObjectOfType<UIManager>()?.TriggerGameOver();
+        Object.FindAnyObjectByType<UIManager>()?.TriggerGameOver();
 
         // Optional cleanup delay
         yield return new WaitForSeconds(0.3f);
@@ -164,7 +190,6 @@ public class PlayerController : MonoBehaviour
                 break;
             }
         }
-
         if (dirtToDestroy != null)
         {
             Destroy(dirtToDestroy.gameObject);

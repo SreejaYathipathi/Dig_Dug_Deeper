@@ -566,43 +566,22 @@ public class EnemyController : MonoBehaviour
     /// <param name="dir">Normalized movement direction.</param>
     void RotateToDirection(Vector3 dir)
     {
-        // Ignore tiny movement to prevent jitter
-        if (dir.sqrMagnitude < 0.01f)
-            return;
+        if (dir.sqrMagnitude < 0.01f) return;
 
-        // Horizontal left/right
-        if (Mathf.Abs(dir.x) > Mathf.Abs(dir.y))
+        float absX = Mathf.Abs(dir.x), absY = Mathf.Abs(dir.y);
+        if (absX > absY)
         {
-            // Right
-            if (dir.x > 0.01f)
-            {
-                sr.flipX = false;
-                sr.flipY = false;
-                transform.eulerAngles = Vector3.zero;
-            }
-            // Left
-            else if (dir.x < -0.01f)
-            {
-                sr.flipX = true;
-                sr.flipY = false;
-                transform.eulerAngles = Vector3.zero;
-            }
+            // Horizontal: just flipX, no Z rotation
+            sr.flipY = false; // reset any vertical flip
+            sr.flipX = dir.x < 0;
+            transform.rotation = Quaternion.identity;
         }
-        else // Vertical up/down
+        else
         {
+            // Vertical: no flipX, rotate Z
             sr.flipX = false;
-            // Up
-            if (dir.y > 0.01f)
-            {
-                sr.flipY = true;
-                transform.eulerAngles = Vector3.zero;
-            }
-            // Down
-            else if (dir.y < -0.01f)
-            {
-                sr.flipY = false;
-                transform.eulerAngles = Vector3.zero;
-            }
+            float zAngle = dir.y > 0 ? 90f : -90f;
+            transform.rotation = Quaternion.Euler(0f, 0f, zAngle);
         }
     }
 

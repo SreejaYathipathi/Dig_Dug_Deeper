@@ -86,7 +86,6 @@ public class FygarController : EnemyController
         isWanderingMoving = false;
         isPreparingToFire = true;
 
-        // Stop movement immediately
         rb.velocity = Vector2.zero;
 
         Vector2Int start = Vector2Int.RoundToInt(transform.position);
@@ -94,29 +93,30 @@ public class FygarController : EnemyController
         for (int i = 1; i <= fireRange; i++)
         {
             Vector2Int tile = start + Vector2Int.RoundToInt(direction) * i;
-
             if (!GridManager.Instance.IsTunnelAt(tile))
                 break;
 
             Vector3 spawnPos = new Vector3(tile.x, tile.y, 0);
             GameObject fire = Instantiate(firePrefab, spawnPos, Quaternion.identity);
+
+            // ▶ Flip the fire sprite based on spit direction
+            SpriteRenderer fireSr = fire.GetComponent<SpriteRenderer>();
+            if (fireSr != null)
+            {
+                // if direction.x is negative, flipX = true; else false
+                fireSr.flipX = (direction.x < 0);
+            }
+
             fire.AddComponent<FireTrigger>().Init(player);
             activeFire.Add(fire);
         }
 
-        // Wait while fire is active
         yield return new WaitForSeconds(fireDuration);
 
-        // Cleanup fire
-        foreach (GameObject fire in activeFire)
-        {
-            if (fire != null)
-                Destroy(fire);
-        }
-
+        foreach (GameObject f in activeFire)
+            if (f != null) Destroy(f);
         activeFire.Clear();
 
-        // Optional delay before movement resumes
         yield return new WaitForSeconds(0.5f);
 
         currentState = EnemyState.Chasing;

@@ -1855,10 +1855,11 @@ MonoBehaviour:
   playerPrefab: {fileID: 5044728018022273526, guid: 961ac94ae1cf8cb40a9189a4e25f786c, type: 3}
   pookaPrefab: {fileID: 8857641144270590770, guid: c07b476468cddc841b28f6ddbbfd80e5, type: 3}
   fygarPrefab: {fileID: 5658271551254213640, guid: e919eefce6b4e6b49af20d590e183476, type: 3}
+  indestructable: {fileID: 6380336617916175885, guid: 860fdb54129e3c245bbb272f5525faf3, type: 3}
   dirtVariants:
   - {fileID: 3436210178444133832, guid: 581998d848895354e8d8cf6a12118690, type: 3}
-  - {fileID: 5496969087100996083, guid: aa3c840d7dafb2041b0a53b295ba4a4b, type: 3}
   - {fileID: 2797370374587968381, guid: 48e49da016971fa489c883349b59ce09, type: 3}
+  - {fileID: 5496969087100996083, guid: aa3c840d7dafb2041b0a53b295ba4a4b, type: 3}
   levelFileName: Levels/Level_1
   tileUnitSize: 1
 --- !u!4 &1288128676

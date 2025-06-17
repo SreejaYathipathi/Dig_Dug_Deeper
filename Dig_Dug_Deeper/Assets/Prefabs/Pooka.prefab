@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: -9081301143060253587}
   - component: {fileID: 5871640874957702738}
   - component: {fileID: 6513006251383366285}
+  - component: {fileID: -4019935971554612819}
   m_Layer: 0
   m_Name: Pooka
   m_TagString: Enemy
@@ -159,7 +160,12 @@ MonoBehaviour:
   maxWanderDuration: 2
   maxInflateStage: 4
   deflateDelay: 1.5
-  inflateSprites: []
+  inflateSprites:
+  - {fileID: -1866722368779445725, guid: 788e77f2384f23144b8ec40708b23dd3, type: 3}
+  - {fileID: 8635897166805466189, guid: 788e77f2384f23144b8ec40708b23dd3, type: 3}
+  - {fileID: 1117900086497293572, guid: 788e77f2384f23144b8ec40708b23dd3, type: 3}
+  - {fileID: 3892539483161372520, guid: 788e77f2384f23144b8ec40708b23dd3, type: 3}
+  animator: {fileID: -4019935971554612819}
 --- !u!50 &6513006251383366285
 Rigidbody2D:
   serializedVersion: 4
@@ -187,3 +193,25 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!95 &-4019935971554612819
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8857641144270590770}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 630238db3ec7ec6408d2a556f48df8a9, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0

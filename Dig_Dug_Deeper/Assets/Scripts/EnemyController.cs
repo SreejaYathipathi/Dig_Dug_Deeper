@@ -14,7 +14,7 @@ public class EnemyController : MonoBehaviour
 
     [SerializeField] private int scoreValue = 200;
 
-    // Movement and behavior settings
+    // Movement and behavior setting
     public float moveSpeed = 2f;
     public float ghostSpeed = 3f;
     public float playerCheckInterval = 2f;

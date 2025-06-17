@@ -1672,6 +1672,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyWanderDelay: 3
   enemyWanderEndTime: 0
+  cameraLerpDuration: 3
 --- !u!4 &1227798426
 Transform:
   m_ObjectHideFlags: 0

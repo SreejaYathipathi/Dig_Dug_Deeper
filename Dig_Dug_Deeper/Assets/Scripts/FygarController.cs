@@ -7,7 +7,6 @@ public class FygarController : EnemyController
     [Header("Fire Settings")]
     [SerializeField] private GameObject firePrefab;
     [SerializeField] private float fireRange = 5f;
-    [SerializeField] private float fireDelay = 0.5f;
     [SerializeField] private float fireDuration = 0.5f;
     [SerializeField] private float fireCheckInterval = 2f;
 
@@ -18,7 +17,7 @@ public class FygarController : EnemyController
     // Animator parameter hash
     private static readonly int FireBreathTrigger = Animator.StringToHash("FireBreath");
 
-    private void Update()
+    protected override void Update()
     {
         base.Update();
 

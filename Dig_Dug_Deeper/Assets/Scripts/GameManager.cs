@@ -37,9 +37,11 @@ public class GameManager : MonoBehaviour
     {
         _activeEnemies.Remove(enemy);
 
-        // Fire the win event exactly once when the list becomes empty
-        if (_activeEnemies.Count == 0 && WinEvent != null)
+        // Only fire win once if the game isn't already in a GameOver state
+        if (_activeEnemies.Count == 0 && WinEvent != null && !isGameOver)
+        {
             WinEvent.Invoke();
+        }
     }
 
     /// <summary>

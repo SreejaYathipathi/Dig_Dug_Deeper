@@ -143,7 +143,8 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      DirtFive_03_0: 5490910186514513293
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

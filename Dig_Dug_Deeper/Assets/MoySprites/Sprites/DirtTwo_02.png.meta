@@ -143,7 +143,8 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      DirtTwo_02_0: 2996111359323233623
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

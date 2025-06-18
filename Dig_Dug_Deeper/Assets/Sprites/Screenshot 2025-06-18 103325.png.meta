@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 0f027de235a0ead48a2c8ec740b52389
+guid: 7faf5170dc84ed94db896e109d75c395
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -586143011812365054
-    second: DirtTen_02_0
+      213: 8513133637008562066
+    second: Screenshot 2025-06-18 103325_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: DirtTen_02_0
+      name: Screenshot 2025-06-18 103325_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 16
-        height: 16
+        width: 897
+        height: 561
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -127,8 +127,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 20da859490a9dd7f0800000000000000
-      internalID: -586143011812365054
+      spriteID: 297135730f9b42670800000000000000
+      internalID: 8513133637008562066
       vertices: []
       indices: 
       edges: []
@@ -143,8 +143,7 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
-    nameFileIdTable:
-      DirtTen_02_0: -586143011812365054
+    nameFileIdTable: {}
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 0f027de235a0ead48a2c8ec740b52389
+guid: b74291de15839df44a1ff7a38fa62c6e
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -586143011812365054
-    second: DirtTen_02_0
+      213: 6687665223634340558
+    second: Untitled_3iyvju_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -37,7 +37,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 1
+    filterMode: 0
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -113,22 +113,22 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: DirtTen_02_0
+      name: Untitled_3iyvju_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 16
-        height: 16
+        x: 61
+        y: 65
+        width: 45
+        height: 17
       alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 2, y: 2, z: 2, w: 2}
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 20da859490a9dd7f0800000000000000
-      internalID: -586143011812365054
+      spriteID: eca457f861c5fcc50800000000000000
+      internalID: 6687665223634340558
       vertices: []
       indices: 
       edges: []
@@ -136,7 +136,7 @@ TextureImporter:
     outline: []
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 06ec5b0fcced0aa4ba91970a5df45e55
     internalID: 0
     vertices: []
     indices: 
@@ -144,7 +144,7 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      DirtTen_02_0: -586143011812365054
+      Untitled_3iyvju_0: 6687665223634340558
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

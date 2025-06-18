@@ -143,7 +143,8 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      DirtNine_01_0: 1152283824562054564
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

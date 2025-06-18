@@ -20,19 +20,33 @@ public class UIManager : MonoBehaviour
             gameOverMenu.SetActive(false);
     }
 
+    void OnEnable()
+    {
+        // Subscribe to the win event
+        if (GameManager.Instance != null)
+            GameManager.Instance.WinEvent += TriggerWin;
+    }
+
+    void OnDisable()
+    {
+        // Unsubscribe to avoid memory leak
+        if (GameManager.Instance != null)
+            GameManager.Instance.WinEvent -= TriggerWin;
+    }
+
     // Called when "Start Game" button is clicked from Main Menu
     public void StartGame()
     {
         SceneManager.LoadScene("DigDugDeeper"); 
     }
 
-    private void Update()
+    /*private void Update()
     {
         if (GameManager.Instance.CheckForWin())
         {
             TriggerWin();
         }
-    }
+    }*/
 
     // Called when the player dies
     public void TriggerGameOver()

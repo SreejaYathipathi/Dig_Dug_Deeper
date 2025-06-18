@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,6 +7,8 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance { get; private set; }
 
     public bool isGameOver = false;
+
+    public event Action WinEvent;
 
     // Add this list to track enemies
     private readonly List<EnemyController> _activeEnemies = new();
@@ -33,6 +36,10 @@ public class GameManager : MonoBehaviour
     public void UnregisterEnemy(EnemyController enemy)
     {
         _activeEnemies.Remove(enemy);
+
+        // Fire the win event exactly once when the list becomes empty
+        if (_activeEnemies.Count == 0 && WinEvent != null)
+            WinEvent.Invoke();
     }
 
     /// <summary>

@@ -68,6 +68,8 @@ public class UIManager : MonoBehaviour
     public void RestartLevel()
     {
         Time.timeScale = 1f;
+        // Stop any playing music (including your win cue)
+        AudioManager.Instance.StopMusic();
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 

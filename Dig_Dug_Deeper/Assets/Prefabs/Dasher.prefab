@@ -203,13 +203,13 @@ MonoBehaviour:
   ghostSpeed: 1
   playerCheckInterval: 2
   ghostGracePeriod: 3
-  normalSprite: {fileID: 0}
-  ghostSprite: {fileID: 0}
-  deathSprite: {fileID: 0}
-  maxWanderDuration: 2
+  normalSprite: {fileID: 8918975766647472534, guid: 68eab22710c0b1744ac62d25899efbe6, type: 3}
+  ghostSprite: {fileID: 4975736564122484358, guid: 68eab22710c0b1744ac62d25899efbe6, type: 3}
+  deathSprite: {fileID: -314853077483979841, guid: 68eab22710c0b1744ac62d25899efbe6, type: 3}
+  maxWanderDuration: 5
   maxInflateStage: 4
   deflateDelay: 1.5
   inflateSprites: []
-  animator: {fileID: 0}
-  dashLength: 5
-  dashSpeed: 5
+  animator: {fileID: -4019935971554612819}
+  _dashLength: 5
+  _dashSpeed: 5

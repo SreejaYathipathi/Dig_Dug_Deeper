@@ -10,12 +10,15 @@ public class DasherController : EnemyController
 {
     [Header("Dash Settings")]
     [Tooltip("Number of tiles to dash in one go.")]
-    [SerializeField] private int dashLength = 5;
+    [SerializeField] private int _dashLength = 5;
     [Tooltip("Dash speed in tiles per second.")]
-    [SerializeField] private float dashSpeed = 5f;
+    [SerializeField] private float _dashSpeed = 5f;
 
-    private bool isDashing = false;
-    private bool hasDashed = false;
+    private bool _isDashing = false;
+    private bool _hasDashed = false;
+
+    // Animator parameter hash for dash
+    private static readonly int DashTrigger = Animator.StringToHash("Dash");
 
     /// <summary>
     /// Overrides base Update to insert dash behavior when in Chasing state.
@@ -42,17 +45,20 @@ public class DasherController : EnemyController
             return;
 
         // Do not run any state logic while dashing
-        if (isDashing)
+        if (_isDashing)
             return;
 
         // Insert dash on first frame of Chasing
         if (currentState == EnemyState.Chasing)
         {
-            if (!hasDashed)
+            if (!_hasDashed)
             {
+                // Trigger dash animation
+                animator.SetTrigger(DashTrigger);
+
                 Vector2Int direction = DetermineDashDirection();
                 StartCoroutine(DashRoutine(direction));
-                hasDashed = true;
+                _hasDashed = true;
             }
             else
             {
@@ -63,7 +69,7 @@ public class DasherController : EnemyController
         else
         {
             // Reset dash availability when leaving Chasing
-            hasDashed = false;
+            _hasDashed = false;
             base.Update();
         }
     }
@@ -88,9 +94,9 @@ public class DasherController : EnemyController
     /// <param name="direction">Cardinal direction to dash in.</param>
     private IEnumerator DashRoutine(Vector2Int direction)
     {
-        isDashing = true;
+        _isDashing = true;
 
-        for (int step = 1; step <= dashLength; step++)
+        for (int step = 1; step <= _dashLength; step++)
         {
             Vector3 nextPos = transform.position + new Vector3(direction.x, direction.y, 0f);
 
@@ -108,10 +114,7 @@ public class DasherController : EnemyController
 
             // 4) Crush player if encountered
             if (hit != null && hit.CompareTag("Player"))
-            {
-                PlayerController pc = hit.GetComponent<PlayerController>();
-                pc?.CrushMe();
-            }
+                hit.GetComponent<PlayerController>()?.CrushMe();
 
             // 5) Crush other enemies if encountered
             if (hit != null)
@@ -125,30 +128,52 @@ public class DasherController : EnemyController
             yield return StartCoroutine(StepTo(nextPos, direction));
         }
 
-        isDashing = false;
+        _isDashing = false;
     }
 
     /// <summary>
     /// Smoothly moves this object one tile toward the destination at dashSpeed.
-    /// Also rotates sprite to face movement direction.
     /// </summary>
-    /// <param name="dest">World position of the next tile.</param>
-    /// <param name="dir">Cardinal direction vector used for rotation.</param>
-    private IEnumerator StepTo(Vector3 dest, Vector2Int dir)
+    /// <param name="destination">World position of the next tile.</param>
+    /// <param name="direction">Cardinal direction vector for movement and rotation.</param>
+    private IEnumerator StepTo(Vector3 destination, Vector2Int direction)
     {
         float t = 0f;
         Vector3 start = transform.position;
-        Vector3 moveDir = new Vector3(dir.x, dir.y, 0f).normalized;
+        Vector3 moveDir = new Vector3(direction.x, direction.y, 0f).normalized;
 
         while (t < 1f)
         {
-            t += Time.deltaTime * dashSpeed;
-            transform.position = Vector3.Lerp(start, dest, Mathf.Min(t, 1f));
+            t += Time.deltaTime * _dashSpeed;
+            transform.position = Vector3.Lerp(start, destination, Mathf.Min(t, 1f));
             yield return null;
         }
 
-        transform.position = dest;
-        RotateToDirection(moveDir);
+        transform.position = destination;
+        RotateSprite(moveDir);
+    }
+
+    /// <summary>
+    /// Rotates the sprite based on movement direction, assuming the default sprite faces left.
+    /// </summary>
+    /// <param name="dir">Normalized movement direction.</param>
+    private void RotateSprite(Vector3 dir)
+    {
+        if (dir.sqrMagnitude < 0.01f) return;
+
+        if (Mathf.Abs(dir.x) > Mathf.Abs(dir.y))
+        {
+            // Horizontal movement: default faces left, flip for right
+            sr.flipX = dir.x > 0f;
+            transform.rotation = Quaternion.identity;
+        }
+        else
+        {
+            // Vertical movement: no horizontal flip, rotate Z
+            sr.flipX = false;
+            float zAngle = dir.y > 0f ? 90f : -90f;
+            transform.rotation = Quaternion.Euler(0f, 0f, zAngle);
+        }
     }
 
     /// <summary>

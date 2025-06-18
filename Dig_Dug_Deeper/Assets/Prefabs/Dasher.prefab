@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 4822056664289825654}
   - component: {fileID: 9147452779985989817}
   - component: {fileID: -9081301143060253587}
-  - component: {fileID: 6513006251383366285}
   - component: {fileID: -4019935971554612819}
   - component: {fileID: 4856880439681064912}
   m_Layer: 0
@@ -136,33 +135,6 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1.31, y: 1.41}
   m_EdgeRadius: 0
---- !u!50 &6513006251383366285
-Rigidbody2D:
-  serializedVersion: 4
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8857641144270590770}
-  m_BodyType: 0
-  m_Simulated: 1
-  m_UseFullKinematicContacts: 0
-  m_UseAutoMass: 0
-  m_Mass: 1
-  m_LinearDrag: 0
-  m_AngularDrag: 0.05
-  m_GravityScale: 0
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_Interpolate: 0
-  m_SleepingMode: 1
-  m_CollisionDetection: 0
-  m_Constraints: 0
 --- !u!95 &-4019935971554612819
 Animator:
   serializedVersion: 7
@@ -215,3 +187,15 @@ MonoBehaviour:
   dashSpeed: 5
   dashCooldown: 5
   wanderDashInterval: 5
+  obstacleMask:
+    serializedVersion: 2
+    m_Bits: 64
+  playerMask:
+    serializedVersion: 2
+    m_Bits: 512
+  enemyMask:
+    serializedVersion: 2
+    m_Bits: 256
+  dirtMask:
+    serializedVersion: 2
+    m_Bits: 8

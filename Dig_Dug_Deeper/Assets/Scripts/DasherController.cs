@@ -1,202 +1,178 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
 /// Dasher enemy: dashes in a cardinal direction for a fixed number of tiles,
-/// digging through dirt, stopping at indestructible rock, and crushing player or other enemies.
-/// Inherits other AI behaviors (Wandering, Chasing, Ghost, Returning, FireBreath) from EnemyController.
+/// digs through dirt, stops at the first obstacle or collision,
+/// crushes player or other enemies, then resumes normal AI.
 /// </summary>
 public class DasherController : EnemyController
 {
     [Header("Dash Settings")]
-    [Tooltip("Number of tiles to dash in one go.")]
-    [SerializeField] private int _dashLength = 5;
-    [Tooltip("Dash speed in tiles per second.")]
-    [SerializeField] private float _dashSpeed = 5f;
+    [Tooltip("Number of tiles the enemy can dash in one go.")]
+    [SerializeField] private int dashLength = 5;
+    [Tooltip("Speed at which the dash occurs (tiles per second).")]
+    [SerializeField] private float dashSpeed = 5f;
+    [Tooltip("Cooldown time between dashes (seconds).")]
+    [SerializeField] private float dashCooldown = 5f;
 
-    private bool _isDashing = false;
-    private bool _hasDashed = false;
+    [Header("Wander Dash Settings")]
+    [Tooltip("Seconds between random dash attempts while wandering.")]
+    [SerializeField] private float wanderDashInterval = 5f;
 
-    // Animator parameter hash for dash
+    private float dashCooldownTimer = 0f;
+    private float wanderDashTimer;
+    private bool isDashing = false;
+
     private static readonly int DashTrigger = Animator.StringToHash("Dash");
 
-    /// <summary>
-    /// Overrides base Update to insert dash behavior when in Chasing state.
-    /// </summary>
+    private new void Awake()
+    {
+        base.Awake();
+        dashCooldownTimer = 0f;
+        wanderDashTimer = wanderDashInterval;
+    }
+
     protected override void Update()
     {
-        // Skip if not on the active level
-        int enemyLevel = LevelManager.Instance.GetPlayerLevelByY(transform.position.y);
-        if (enemyLevel != LevelManager.Instance.currentLevel)
+        base.Update();
+
+        if (dashCooldownTimer > 0f)
+            dashCooldownTimer -= Time.deltaTime;
+
+        if (isDashing || dashCooldownTimer > 0f)
             return;
 
-        // Enforce wandering during level transitions
-        if (Time.time < LevelTransitionManager.Instance.enemyWanderEndTime)
-        {
-            currentState = EnemyState.Wandering;
-            return;
-        }
-
-        // Skip when off-screen, game over, dead, or inflating
-        if (!IsEnemyVisibleToCamera() ||
-            GameManager.Instance.isGameOver ||
-            isDead ||
-            isInflating)
-            return;
-
-        // Do not run any state logic while dashing
-        if (_isDashing)
-            return;
-
-        // Insert dash on first frame of Chasing
         if (currentState == EnemyState.Chasing)
         {
-            if (!_hasDashed)
-            {
-                // Trigger dash animation
-                animator.SetTrigger(DashTrigger);
-
-                Vector2Int direction = DetermineDashDirection();
-                StartCoroutine(DashRoutine(direction));
-                _hasDashed = true;
-            }
-            else
-            {
-                // After dash completes, fall back to normal AI
-                base.Update();
-            }
+            Vector2Int dir = DetermineDashDirection();
+            StartDash(dir);
+            return;
         }
-        else
+
+        if (currentState == EnemyState.Wandering)
         {
-            // Reset dash availability when leaving Chasing
-            _hasDashed = false;
-            base.Update();
+            wanderDashTimer -= Time.deltaTime;
+            if (wanderDashTimer <= 0f)
+            {
+                wanderDashTimer = wanderDashInterval;
+                Vector2Int[] dirs = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+                Vector2Int randomDir = dirs[Random.Range(0, dirs.Length)];
+                StartDash(randomDir);
+            }
         }
     }
 
+    private void StartDash(Vector2Int direction)
+    {
+        if (animator != null)
+            animator.SetTrigger(DashTrigger);
+
+        StartCoroutine(DashRoutine(direction));
+        dashCooldownTimer = dashCooldown;
+        isDashing = true;
+    }
+
+    private IEnumerator DashRoutine(Vector2Int direction)
+    {
+        for (int i = 1; i <= dashLength; i++)
+        {
+            Vector3 next = transform.position + new Vector3(direction.x, direction.y, 0f);
+            if (!GridManager.Instance.IsWithinBounds(next))
+                break;
+
+            DestroyDirtAt(next);
+
+            Collider2D hit = Physics2D.OverlapPoint(next);
+            if (hit != null)
+            {
+                if (hit.gameObject.name.Contains("Indestructible"))
+                    break;
+                if (hit.CompareTag("Player"))
+                    hit.GetComponent<PlayerController>()?.CrushMe();
+                EnemyController ec = hit.GetComponent<EnemyController>();
+                if (ec != null && ec != this)
+                    ec.CrushMe();
+                break;
+            }
+
+            yield return StartCoroutine(StepTo(next, direction));
+        }
+
+        isDashing = false;
+    }
+
+    private IEnumerator StepTo(Vector3 dest, Vector2Int dir)
+    {
+        float t = 0f;
+        Vector3 start = transform.position;
+        Vector3 moveDir = new Vector3(dir.x, dir.y, 0f).normalized;
+
+        while (t < 1f)
+        {
+            t += Time.deltaTime * dashSpeed;
+            transform.position = Vector3.Lerp(start, dest, Mathf.Min(t, 1f));
+            yield return null;
+        }
+
+        transform.position = dest;
+        RotateToDirection(dest);
+    }
+
     /// <summary>
-    /// Chooses the cardinal direction (up/down/left/right) that best points toward the player.
+    /// Rotates the enemy sprite to face the movement direction (inverted axes).
     /// </summary>
-    /// <returns>Cardinal direction as a Vector2Int.</returns>
+    /// <param name="dir">Normalized movement direction.</param>
+    protected override void RotateToDirection(Vector3 dir)
+    {
+        if (dir.sqrMagnitude < 0.01f)
+            return;
+
+        float absX = Mathf.Abs(dir.x), absY = Mathf.Abs(dir.y);
+        if (absX > absY)
+        {
+            // Horizontal: no rotation, flip when moving right
+            sr.flipY = false;                   // clear any vertical flip
+            transform.rotation = Quaternion.identity;
+            sr.flipX = dir.x > 0f;              // now true when moving right
+        }
+        else
+        {
+            // Vertical: rotate Z only, up = -90°, down = +90°
+            sr.flipX = false;
+            float zAngle = (dir.y > 0f)
+                ? -90f   // moving up
+                : 90f;  // moving down
+            transform.rotation = Quaternion.Euler(0f, 0f, zAngle);
+        }
+    }
+
+
     private Vector2Int DetermineDashDirection()
     {
-        Vector2 delta = (player.position - transform.position);
+        Vector2 delta = player.position - transform.position;
         if (Mathf.Abs(delta.x) > Mathf.Abs(delta.y))
             return new Vector2Int(delta.x > 0 ? 1 : -1, 0);
         else
             return new Vector2Int(0, delta.y > 0 ? 1 : -1);
     }
 
-    /// <summary>
-    /// Performs the dash: moves step-by-step, digs dirt, stops at indestructible rock,
-    /// and crushes any player or enemy encountered.
-    /// </summary>
-    /// <param name="direction">Cardinal direction to dash in.</param>
-    private IEnumerator DashRoutine(Vector2Int direction)
-    {
-        _isDashing = true;
-
-        for (int step = 1; step <= _dashLength; step++)
-        {
-            Vector3 nextPos = transform.position + new Vector3(direction.x, direction.y, 0f);
-
-            // 1) Bounds check
-            if (!GridManager.Instance.IsWithinBounds(nextPos))
-                break;
-
-            // 2) Check for unbreakable rock
-            Collider2D hit = Physics2D.OverlapPoint(nextPos);
-            if (hit != null && hit.gameObject.name.Contains("Indestructable"))
-                break;
-
-            // 3) Dig any dirt present
-            DestroyDirtAt(nextPos);
-
-            // 4) Crush player if encountered
-            if (hit != null && hit.CompareTag("Player"))
-                hit.GetComponent<PlayerController>()?.CrushMe();
-
-            // 5) Crush other enemies if encountered
-            if (hit != null)
-            {
-                EnemyController ec = hit.GetComponent<EnemyController>();
-                if (ec != null && ec != this)
-                    ec.CrushMe();
-            }
-
-            // 6) Move one tile toward dash direction
-            yield return StartCoroutine(StepTo(nextPos, direction));
-        }
-
-        _isDashing = false;
-    }
-
-    /// <summary>
-    /// Smoothly moves this object one tile toward the destination at dashSpeed.
-    /// </summary>
-    /// <param name="destination">World position of the next tile.</param>
-    /// <param name="direction">Cardinal direction vector for movement and rotation.</param>
-    private IEnumerator StepTo(Vector3 destination, Vector2Int direction)
-    {
-        float t = 0f;
-        Vector3 start = transform.position;
-        Vector3 moveDir = new Vector3(direction.x, direction.y, 0f).normalized;
-
-        while (t < 1f)
-        {
-            t += Time.deltaTime * _dashSpeed;
-            transform.position = Vector3.Lerp(start, destination, Mathf.Min(t, 1f));
-            yield return null;
-        }
-
-        transform.position = destination;
-        RotateSprite(moveDir);
-    }
-
-    /// <summary>
-    /// Rotates the sprite based on movement direction, assuming the default sprite faces left.
-    /// </summary>
-    /// <param name="dir">Normalized movement direction.</param>
-    private void RotateSprite(Vector3 dir)
-    {
-        if (dir.sqrMagnitude < 0.01f) return;
-
-        if (Mathf.Abs(dir.x) > Mathf.Abs(dir.y))
-        {
-            // Horizontal movement: default faces left, flip for right
-            sr.flipX = dir.x > 0f;
-            transform.rotation = Quaternion.identity;
-        }
-        else
-        {
-            // Vertical movement: no horizontal flip, rotate Z
-            sr.flipX = false;
-            float zAngle = dir.y > 0f ? 90f : -90f;
-            transform.rotation = Quaternion.Euler(0f, 0f, zAngle);
-        }
-    }
-
-    /// <summary>
-    /// Destroys a dirt tile at the given position and spawns a tunnel in its place.
-    /// Awards score for digging.
-    /// </summary>
-    /// <param name="pos">World position of the dirt tile.</param>
     private void DestroyDirtAt(Vector3 pos)
     {
-        Transform dirtToDestroy = null;
+        Transform dirt = null;
         foreach (Transform child in GridManager.Instance.transform)
         {
             if (child.name.Contains("DirtTile") && Vector3.Distance(child.position, pos) < 0.1f)
             {
-                dirtToDestroy = child;
+                dirt = child;
                 break;
             }
         }
-
-        if (dirtToDestroy != null)
+        if (dirt != null)
         {
-            Destroy(dirtToDestroy.gameObject);
-            GameObject tunnel = Instantiate(
+            Destroy(dirt.gameObject);
+            var tunnel = Instantiate(
                 GridManager.Instance.tunnelPrefab,
                 pos,
                 Quaternion.identity,

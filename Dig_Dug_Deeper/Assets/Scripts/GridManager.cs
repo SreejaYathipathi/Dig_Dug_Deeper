@@ -86,16 +86,19 @@ public class GridManager : MonoBehaviour
         for (int y = 0; y < height; y++)
         {
             string line = lines[y].Trim();
-            GameObject thisLineDirt = dirtPrefabsByLine[y]; // Use correct dirt
+            GameObject thisLineDirt = dirtPrefabsByLine[y]; 
 
             for (int x = 0; x < line.Length; x++)
             {
                 char tileChar = line[x];
-                float spawnX = x * tileUnitSize;
-                float spawnY = (height - 1 - y) * tileUnitSize;
-                Vector3 spawnPos = new Vector3(spawnX, spawnY, 0) + bottomLeftOffset;
+                Vector3 spawnPos = new Vector3(x * tileUnitSize,
+                                               (height - 1 - y) * tileUnitSize,
+                                               0) + bottomLeftOffset;
 
-                if (tileChar == 'K' || tileChar == 'F' || tileChar == 'P')
+                if (tileChar == 'K' ||
+                    tileChar == 'F' ||
+                    tileChar == 'P' ||
+                    tileChar == 'S')   
                 {
                     Instantiate(tunnelPrefab, spawnPos, Quaternion.identity, transform);
                     Instantiate(GetPrefabForChar(tileChar), spawnPos, Quaternion.identity, transform);

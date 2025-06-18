@@ -85,6 +85,7 @@ public class UIManager : MonoBehaviour
 
     public void TriggerWin()
     {
+        ScoreManager.Instance.EvaluateHighScore();
         if (winMenu != null)
         {
             winMenu.SetActive(true);

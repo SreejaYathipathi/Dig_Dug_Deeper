@@ -68,6 +68,8 @@ public class EnemyController : MonoBehaviour
     private static readonly int DeflateTrigger = Animator.StringToHash("Deflate");
     private static readonly int DieTrigger = Animator.StringToHash("Die");
 
+    protected Camera _mainCam;
+
     protected void Awake()
     {
         //animator = GetComponent<Animator>();
@@ -79,6 +81,7 @@ public class EnemyController : MonoBehaviour
     /// </summary>
     private void Start()
     {
+        _mainCam = Camera.main;
         rb = GetComponent<Rigidbody2D>();
         sr = GetComponent<SpriteRenderer>();
         player = GameObject.FindGameObjectWithTag("Player").transform;
@@ -439,6 +442,7 @@ public class EnemyController : MonoBehaviour
     /// <summary>
     /// Switches the enemy to ghost mode (move through walls).
     /// </summary>
+    // Called when the enemy switches to ghost mode
     void EnterGhostMode()
     {
         currentState = EnemyState.Ghost;
@@ -446,10 +450,17 @@ public class EnemyController : MonoBehaviour
 
         ghostTargetPosition = player.position;
 
+        // Change sprite and sorting
         if (ghostSprite != null)
             sr.sprite = ghostSprite;
-
         sr.sortingOrder = 5;
+
+        // Stop pathfinding coroutine during ghost state
+        if (pathCheckRoutine != null)
+        {
+            StopCoroutine(pathCheckRoutine);
+            pathCheckRoutine = null;
+        }
     }
 
     /// <summary>
@@ -484,7 +495,10 @@ public class EnemyController : MonoBehaviour
     /// <returns>True if visible, false otherwise.</returns>
     protected bool IsEnemyVisibleToCamera()
     {
-        Vector3 viewportPos = Camera.main.WorldToViewportPoint(transform.position);
+        // Cache Camera.main
+        if (_mainCam == null) _mainCam = Camera.main;
+
+        Vector3 viewportPos = _mainCam.WorldToViewportPoint(transform.position);
         return viewportPos.x >= 0 && viewportPos.x <= 1f &&
                viewportPos.y >= 0 && viewportPos.y <= 1f &&
                viewportPos.z >= 0;
@@ -537,14 +551,21 @@ public class EnemyController : MonoBehaviour
     /// <summary>
     /// Reverts the enemy visual from ghost mode to normal.
     /// </summary>
+    // Called when the enemy returns to normal mode
     void ExitGhostMode()
     {
         isGhost = false;
 
+        // Restore sprite and sorting
         if (normalSprite != null)
             sr.sprite = normalSprite;
-
         sr.sortingOrder = 1;
+
+        // Resume pathfinding coroutine after ghost mode ends
+        if (pathCheckRoutine == null)
+        {
+            pathCheckRoutine = StartCoroutine(CheckForPlayerPathRoutine());
+        }
     }
 
     /// <summary>

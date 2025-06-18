@@ -86,11 +86,17 @@ public class UIManager : MonoBehaviour
 
     public void TriggerWin()
     {
+        // Stop any background music before playing win cue
+        AudioManager.Instance.StopMusic();
+
+        // Play the win music once (make sure “PlayerWinMusic” is in your Music Clips)
+        AudioManager.Instance.PlayMusicOnce("PlayerWin");
+
         ScoreManager.Instance.EvaluateHighScore();
         if (winMenu != null)
         {
             winMenu.SetActive(true);
-            Time.timeScale = 0f;             
+            Time.timeScale = 0f;
         }
 
         if (winScoreText != null)

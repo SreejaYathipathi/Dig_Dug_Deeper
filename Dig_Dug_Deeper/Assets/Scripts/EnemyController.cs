@@ -595,6 +595,7 @@ public class EnemyController : MonoBehaviour
 
         if (animator != null) animator.SetTrigger(DieTrigger);
 
+        AudioManager.Instance.PlaySFX("EnemyExplosion");
         ScoreManager.Instance?.AddScore(scoreValue);
 
         StartCoroutine(DestroySelf());

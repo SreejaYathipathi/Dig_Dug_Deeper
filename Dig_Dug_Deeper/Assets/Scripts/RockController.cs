@@ -42,6 +42,10 @@ public class RockController : MonoBehaviour
         {
             // Enable trigger mode so OnTriggerEnter2D will fire during fall
             _boxCollider.isTrigger = true;
+
+            // Play falling one-shot SFX
+            AudioManager.Instance.PlaySFX("RockFalling");
+
             StartCoroutine(FallRoutine());
         }
         else
@@ -138,8 +142,15 @@ public class RockController : MonoBehaviour
         if (!isFalling) return;  // Only crush while falling
 
         if (other.CompareTag("Player"))
+        {
             other.GetComponent<PlayerController>()?.CrushMe();
+        }
         else if (other.CompareTag("Enemy"))
+        {
+            // Play kill one-shot SFX before crushing enemy
+            AudioManager.Instance.PlaySFX("RockKill");
+
             other.GetComponent<EnemyController>()?.CrushMe();
+        }
     }
 }

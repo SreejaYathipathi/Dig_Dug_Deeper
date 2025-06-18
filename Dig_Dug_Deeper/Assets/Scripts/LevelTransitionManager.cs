@@ -55,6 +55,7 @@ public class LevelTransitionManager : MonoBehaviour
         // Only transition if at the boundary and all enemies are cleared
         if (playerRow == boundaryRow && allCleared)
         {
+            AudioManager.Instance.PlayLevelChange("LevelChange");
             // Increment level index, clamped
             LevelManager.Instance.currentLevel = Mathf.Min(
                 LevelManager.Instance.currentLevel + 1,

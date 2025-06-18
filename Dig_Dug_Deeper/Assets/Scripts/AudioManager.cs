@@ -2,7 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Manages all game audio: background music and sound effects. Implements a singleton pattern for global access.
+/// Manages all game audio: background music, sound effects, and level-change cues.
+/// Implements a singleton pattern for global access.
 /// </summary>
 public class AudioManager : MonoBehaviour
 {
@@ -18,6 +19,7 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioSource _musicSource;       // AudioSource for background music
     [SerializeField] private AudioSource _sfxSource;         // AudioSource for general sound effects
     [SerializeField] private AudioSource _playerSfxSource;   // AudioSource for player-specific effects
+    [SerializeField] private AudioSource _levelChangeSource; // Dedicated source for level-change music
 
     [Header("Music Clips")]
     [Tooltip("List of music tracks available to play.")]
@@ -31,52 +33,43 @@ public class AudioManager : MonoBehaviour
     [Tooltip("List of player-specific sound effects available to play.")]
     [SerializeField] private Sound[] _playerSfxClips;
 
+    [Header("Level Change Clips")]
+    [Tooltip("List of level change music clips.")]
+    [SerializeField] private Sound[] _levelChangeClips;
+
     // Lookup dictionaries for quick clip retrieval
     private Dictionary<string, Sound> _musicDict;
     private Dictionary<string, Sound> _sfxDict;
     private Dictionary<string, Sound> _playerSfxDict;
+    private Dictionary<string, Sound> _levelChangeDict;
 
     /// <summary>
-    /// Enforce singleton pattern and initialize dictionaries.
+    /// Enforce singleton and initialize lookup dictionaries.
     /// </summary>
     private void Awake()
     {
-        // Singleton enforcement
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
         }
-
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        // Initialize lookup dictionaries
         _musicDict = new Dictionary<string, Sound>();
         _sfxDict = new Dictionary<string, Sound>();
         _playerSfxDict = new Dictionary<string, Sound>();
+        _levelChangeDict = new Dictionary<string, Sound>();
 
-        foreach (var sound in _musicClips)
-        {
-            if (!_musicDict.ContainsKey(sound.Name))
-                _musicDict.Add(sound.Name, sound);
-        }
-        foreach (var sound in _sfxClips)
-        {
-            if (!_sfxDict.ContainsKey(sound.Name))
-                _sfxDict.Add(sound.Name, sound);
-        }
-        foreach (var sound in _playerSfxClips)
-        {
-            if (!_playerSfxDict.ContainsKey(sound.Name))
-                _playerSfxDict.Add(sound.Name, sound);
-        }
+        foreach (var sound in _musicClips) _musicDict[sound.Name] = sound;
+        foreach (var sound in _sfxClips) _sfxDict[sound.Name] = sound;
+        foreach (var sound in _playerSfxClips) _playerSfxDict[sound.Name] = sound;
+        foreach (var sound in _levelChangeClips) _levelChangeDict[sound.Name] = sound;
     }
 
     /// <summary>
-    /// Play a music track by name. Stops current music and loops new track.
+    /// Play a music track by name in loop mode.
     /// </summary>
-    /// <param name="name">The key name of the music track.</param>
     public void PlayMusic(string name)
     {
         if (_musicDict.TryGetValue(name, out Sound sound))
@@ -87,10 +80,23 @@ public class AudioManager : MonoBehaviour
             _musicSource.loop = true;
             _musicSource.Play();
         }
-        else
+        else Debug.LogWarning($"AudioManager: Music '{name}' not found.");
+    }
+
+    /// <summary>
+    /// Play a music track by name only once (non-looping).
+    /// </summary>
+    public void PlayMusicOnce(string name)
+    {
+        if (_musicDict.TryGetValue(name, out Sound sound))
         {
-            Debug.LogWarning($"AudioManager: Music '{name}' not found.");
+            _musicSource.clip = sound.Clip;
+            _musicSource.volume = sound.Volume;
+            _musicSource.pitch = sound.Pitch;
+            _musicSource.loop = false;
+            _musicSource.Play();
         }
+        else Debug.LogWarning($"AudioManager: One-shot music '{name}' not found.");
     }
 
     /// <summary>
@@ -98,67 +104,67 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     public void StopMusic()
     {
-        _musicSource.Stop();
+        if (_musicSource != null)
+            _musicSource.Stop();
+        else
+            Debug.LogWarning("AudioManager: Cannot stop music, source is null or destroyed.");
     }
 
     /// <summary>
     /// Play a one-shot general sound effect by name.
     /// </summary>
-    /// <param name="name">The key name of the general SFX.</param>
     public void PlaySFX(string name)
     {
         if (_sfxDict.TryGetValue(name, out Sound sound))
-        {
             _sfxSource.PlayOneShot(sound.Clip, sound.Volume);
-        }
-        else
-        {
-            Debug.LogWarning($"AudioManager: SFX '{name}' not found.");
-        }
+        else Debug.LogWarning($"AudioManager: SFX '{name}' not found.");
     }
 
     /// <summary>
     /// Play a one-shot player-specific sound effect by name.
     /// </summary>
-    /// <param name="name">The key name of the player SFX.</param>
     public void PlayPlayerSFX(string name)
     {
         if (_playerSfxDict.TryGetValue(name, out Sound sound))
-        {
             _playerSfxSource.PlayOneShot(sound.Clip, sound.Volume);
-        }
-        else
+        else Debug.LogWarning($"AudioManager: Player SFX '{name}' not found.");
+    }
+
+    /// <summary>
+    /// Play level change music once on its dedicated source.
+    /// </summary>
+    public void PlayLevelChange(string name)
+    {
+        if (_levelChangeDict.TryGetValue(name, out Sound sound))
         {
-            Debug.LogWarning($"AudioManager: Player SFX '{name}' not found.");
+            _levelChangeSource.clip = sound.Clip;
+            _levelChangeSource.volume = sound.Volume;
+            _levelChangeSource.pitch = sound.Pitch;
+            _levelChangeSource.loop = false;
+            _levelChangeSource.Play();
         }
+        else Debug.LogWarning($"AudioManager: Level change music '{name}' not found.");
     }
 
     /// <summary>
-    /// Set the global music volume.
+    /// Adjust global music volume.
     /// </summary>
-    /// <param name="volume">Volume (0.0 to 1.0).</param>
-    public void SetMusicVolume(float volume)
-    {
-        _musicSource.volume = Mathf.Clamp01(volume);
-    }
+    public void SetMusicVolume(float volume) { _musicSource.volume = Mathf.Clamp01(volume); }
 
     /// <summary>
-    /// Set the global general SFX volume.
+    /// Adjust global general SFX volume.
     /// </summary>
-    /// <param name="volume">Volume (0.0 to 1.0).</param>
-    public void SetSFXVolume(float volume)
-    {
-        _sfxSource.volume = Mathf.Clamp01(volume);
-    }
+    public void SetSFXVolume(float volume) { _sfxSource.volume = Mathf.Clamp01(volume); }
 
     /// <summary>
-    /// Set the global player SFX volume.
+    /// Adjust global player SFX volume.
     /// </summary>
-    /// <param name="volume">Volume (0.0 to 1.0).</param>
-    public void SetPlayerSFXVolume(float volume)
-    {
-        _playerSfxSource.volume = Mathf.Clamp01(volume);
-    }
+    public void SetPlayerSFXVolume(float volume) { _playerSfxSource.volume = Mathf.Clamp01(volume); }
+
+    /// <summary>
+    /// Adjust global level change volume.
+    /// </summary>
+    public void SetLevelChangeVolume(float volume) { _levelChangeSource.volume = Mathf.Clamp01(volume); }
 }
 
 /// <summary>

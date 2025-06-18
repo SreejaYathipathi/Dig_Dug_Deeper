@@ -12,10 +12,13 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float deathDelay = 0.5f; // Fallback delay before game over
     private Vector2 lastMoveDir = Vector2.right;     // Last movement direction
     [SerializeField] private GameObject pumpPrefab;  // Prefab for pump effect
-    [SerializeField] private float pumpDistance = 2f;// Distance to spawn pump
+    [SerializeField] private float pumpDistance = 2f; // Distance to spawn pump
 
     [Header("Animation")]
     [SerializeField] private Animator _animator;     // Animator component reference
+
+    // Track if move music is currently playing
+    private bool _isMoveMusicPlaying = false;
 
     void Awake()
     {
@@ -43,6 +46,13 @@ public class PlayerController : MonoBehaviour
         // Restrict to one axis at a time
         if (Mathf.Abs(input.x) > 0.1f)
             input.y = 0;
+
+        // Stop move music when no movement input and if currently playing
+        if (input == Vector2.zero && _isMoveMusicPlaying)
+        {
+            AudioManager.Instance.StopMusic();
+            _isMoveMusicPlaying = false;
+        }
 
         if (input != Vector2.zero)
         {
@@ -107,10 +117,26 @@ public class PlayerController : MonoBehaviour
             pump.transform.rotation = Quaternion.Euler(0f, 0f, 90f);
         else if (lastMoveDir.y < 0)
             pump.transform.rotation = Quaternion.Euler(0f, 0f, -90f);
+
+        // Play pump sound effect
+        AudioManager.Instance.PlayPlayerSFX("Pump");
     }
 
     public void CrushMe()
     {
+        // Stop move music if playing
+        if (_isMoveMusicPlaying)
+        {
+            AudioManager.Instance.StopMusic();
+            _isMoveMusicPlaying = false;
+        }
+
+        AudioManager.Instance.PlayMusicOnce("PlayerDie");
+        AudioManager.Instance.PlayPlayerSFX("Die");
+
+        // Play death sound effect
+        AudioManager.Instance.PlayPlayerSFX("Die");
+
         // Trigger die animation via Any State transition
         if (_animator != null)
             _animator.SetTrigger("Die");
@@ -156,6 +182,14 @@ public class PlayerController : MonoBehaviour
     IEnumerator MoveTo(Vector3 dest)
     {
         isMoving = true;
+
+        // Play looping move music if not already playing
+        if (!_isMoveMusicPlaying)
+        {
+            AudioManager.Instance.PlayMusic("Move");
+            _isMoveMusicPlaying = true;
+        }
+
         float t = 0f;
         Vector3 start = transform.position;
 
@@ -167,6 +201,7 @@ public class PlayerController : MonoBehaviour
         }
 
         transform.position = dest;
+
         isMoving = false;
     }
 

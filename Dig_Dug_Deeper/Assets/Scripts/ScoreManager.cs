@@ -29,6 +29,7 @@ public class ScoreManager : MonoBehaviour
 
     public void AddScore(int amount)
     {
+        AudioManager.Instance.PlaySFX("ScoreUp");
         CurrentScore += amount;
         Debug.Log("Score: " + CurrentScore);
         UpdateUI(); // Only updates UI, no high score check here!

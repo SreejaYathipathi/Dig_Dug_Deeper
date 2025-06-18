@@ -482,7 +482,7 @@ public class EnemyController : MonoBehaviour
     /// Checks if the enemy is visible to the camera.
     /// </summary>
     /// <returns>True if visible, false otherwise.</returns>
-    private bool IsEnemyVisibleToCamera()
+    protected bool IsEnemyVisibleToCamera()
     {
         Vector3 viewportPos = Camera.main.WorldToViewportPoint(transform.position);
         return viewportPos.x >= 0 && viewportPos.x <= 1f &&
@@ -564,7 +564,7 @@ public class EnemyController : MonoBehaviour
     /// Rotates the enemy sprite to face the movement direction.
     /// </summary>
     /// <param name="dir">Normalized movement direction.</param>
-    void RotateToDirection(Vector3 dir)
+    protected void RotateToDirection(Vector3 dir)
     {
         if (dir.sqrMagnitude < 0.01f) return;
 

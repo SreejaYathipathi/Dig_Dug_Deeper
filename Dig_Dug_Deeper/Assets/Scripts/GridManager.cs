@@ -13,6 +13,7 @@ public class GridManager : MonoBehaviour
     public GameObject pookaPrefab;
     public GameObject fygarPrefab;
     public GameObject indestructable;
+    public GameObject dasherPrefab;
 
     public GameObject[] dirtVariants; // Array of dirt variants for different levels
 
@@ -148,6 +149,7 @@ public class GridManager : MonoBehaviour
             'K' => pookaPrefab,
             'F' => fygarPrefab,
             'I' => indestructable,
+            'S' => dasherPrefab,
             _ => null
         };
     }

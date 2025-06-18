@@ -7,7 +7,9 @@ using UnityEngine.SceneManagement;
 public class UIManager : MonoBehaviour
 {
     public GameObject gameOverMenu;
+    public GameObject winMenu;
     [SerializeField] private TextMeshProUGUI lastScoreText;
+    [SerializeField] private TextMeshProUGUI winScoreText;
 
     void Start()
     {
@@ -22,6 +24,14 @@ public class UIManager : MonoBehaviour
     public void StartGame()
     {
         SceneManager.LoadScene("DigDugDeeper"); 
+    }
+
+    private void Update()
+    {
+        if (GameManager.Instance.CheckForWin())
+        {
+            TriggerWin();
+        }
     }
 
     // Called when the player dies
@@ -57,5 +67,17 @@ public class UIManager : MonoBehaviour
     public void QuitGame()
     {
         Application.Quit();
+    }
+
+    public void TriggerWin()
+    {
+        if (winMenu != null)
+        {
+            winMenu.SetActive(true);
+            Time.timeScale = 0f;             
+        }
+
+        if (winScoreText != null)
+            winScoreText.text = "Your Score: " + ScoreManager.Instance.LastRunScore;
     }
 }

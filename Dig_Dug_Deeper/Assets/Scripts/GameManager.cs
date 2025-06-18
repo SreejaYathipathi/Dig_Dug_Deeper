@@ -57,6 +57,15 @@ public class GameManager : MonoBehaviour
         return true;
     }
 
+    public bool CheckForWin()
+    {
+        if (_activeEnemies.Count == 0)
+        {
+            return true;
+        }
+        return false;
+    }
+
     public void GameOver()
     {
         if (isGameOver) return;

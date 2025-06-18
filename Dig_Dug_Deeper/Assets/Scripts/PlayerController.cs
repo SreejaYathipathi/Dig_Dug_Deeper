@@ -13,6 +13,8 @@ public class PlayerController : MonoBehaviour
     private Vector2 lastMoveDir = Vector2.right;     // Last movement direction
     [SerializeField] private GameObject pumpPrefab;  // Prefab for pump effect
     [SerializeField] private float pumpDistance = 2f; // Distance to spawn pump
+    [SerializeField] private float pumpCooldown = 0.4f; // Adjust time between pumps
+    private float lastPumpTime = -Mathf.Infinity;
 
     [Header("Animation")]
     [SerializeField] private Animator _animator;     // Animator component reference
@@ -95,7 +97,17 @@ public class PlayerController : MonoBehaviour
 
         // Pump action
         if (Input.GetKeyDown(KeyCode.Space))
-            TryPumpEnemy();
+        {
+            if (Time.time >= lastPumpTime + pumpCooldown)
+            {
+                TryPumpEnemy();
+                lastPumpTime = Time.time;
+            }
+            else
+            {
+                Debug.Log("Pump is cooling down!");
+            }
+        }
     }
 
     void TryPumpEnemy()

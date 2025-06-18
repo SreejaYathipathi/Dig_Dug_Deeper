@@ -9,6 +9,7 @@ public class FygarController : EnemyController
     [SerializeField] private float fireRange = 5f;
     [SerializeField] private float fireDuration = 0.5f;
     [SerializeField] private float fireCheckInterval = 2f;
+    [SerializeField] private float fireCharging = 1f;
 
     private bool isPreparingToFire = false;
     private float fireTimer;
@@ -94,7 +95,7 @@ public class FygarController : EnemyController
         rb.velocity = Vector2.zero;
 
         Vector2Int start = Vector2Int.RoundToInt(transform.position);
-
+        yield return new WaitForSeconds(fireCharging);
         for (int i = 1; i <= fireRange; i++)
         {
             Vector2Int tile = start + Vector2Int.RoundToInt(direction) * i;

@@ -3,18 +3,20 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - Enemy
+  - Tunnel
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Dirt
   - Water
   - UI
-  - 
-  - 
-  - 
-  - 
+  - Obstacle
+  - Tunnel
+  - Enemy
+  - Player
   - 
   - 
   - 

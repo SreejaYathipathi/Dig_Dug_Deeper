@@ -18,6 +18,7 @@ public class UIManager : MonoBehaviour
         // If this is the Game scene, make sure Game Over UI is hidden
         if (gameOverMenu != null)
             gameOverMenu.SetActive(false);
+
     }
 
     void OnEnable()
